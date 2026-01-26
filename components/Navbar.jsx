@@ -513,6 +513,19 @@ const Navbar = () => {
               )}
             </button>
 
+            {/* Store Dashboard Badge - Shows if user is a seller */}
+            {isSeller && (
+              <Link
+                href="/store"
+                className="flex flex-col items-center gap-0.5 hover:text-red-600 transition text-gray-600 relative"
+              >
+                <div className="w-6 h-6 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-purple-600 text-white font-bold text-[10px]">
+                  DB
+                </div>
+                <span className="text-xs font-medium">Store</span>
+              </Link>
+            )}
+
             {/* Login/User Button */}
             {firebaseUser ? (
               <div className="relative" ref={userDropdownRef}>
@@ -594,6 +607,18 @@ const Navbar = () => {
 
           {/* Mobile Right Side - Login Icon + Cart */}
           <div className="lg:hidden flex items-center gap-3">
+            {/* Store Dashboard Badge for Mobile - Shows if user is a seller */}
+            {isSeller && (
+              <Link
+                href="/store"
+                className="relative p-2 hover:bg-gray-100 rounded-full transition"
+              >
+                <div className="w-7 h-7 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-purple-600 text-white font-bold text-xs shadow-md">
+                  DB
+                </div>
+              </Link>
+            )}
+            
             {/* Show user avatar if signed in, else login icon */}
             {isHomePage && (
               firebaseUser ? (
