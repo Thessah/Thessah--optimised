@@ -22,6 +22,14 @@ const ProductSchema = new mongoose.Schema({
   allowReplacement: { type: Boolean, default: true },
   tags: { type: [String], default: [] },
   storeId: String,
+  enableEnquiry: { type: Boolean, default: false },
+  // Price Breakup fields
+  goldType: { type: String, enum: ['yellow', 'white', 'rose', 'platinum'], default: null },
+  goldWeight: { type: Number, default: 0 }, // in grams
+  goldRate: { type: Number, default: 0 }, // per gram
+  stoneWeight: { type: Number, default: 0 }, // in carats
+  stonePrice: { type: Number, default: 0 },
+  makingCharges: { type: Number, default: 0 },
 }, { timestamps: true });
 
 // Add indexes for better query performance

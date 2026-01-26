@@ -95,7 +95,13 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
         enquiryOnly: false,
         reviews: [],
         badges: [], // Array of badge labels like "Price Lower Than Usual", "Hot Deal", etc.
-        tags: []
+        tags: [],
+        goldType: '',
+        goldWeight: '',
+        goldRate: '',
+        stoneWeight: '',
+        stonePrice: '',
+        makingCharges: ''
     })
     // Variants state
     const [hasVariants, setHasVariants] = useState(false)
@@ -206,7 +212,13 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                 allowReplacement: product.allowReplacement !== undefined ? product.allowReplacement : true,
                 reviews: product.reviews || [],
                 badges: product.attributes?.badges || [],
-                tags: product.tags || []
+                tags: product.tags || [],
+                goldType: product.goldType || '',
+                goldWeight: product.goldWeight || '',
+                goldRate: product.goldRate || '',
+                stoneWeight: product.stoneWeight || '',
+                stonePrice: product.stonePrice || '',
+                makingCharges: product.makingCharges || ''
             })
             const pv = Array.isArray(product.variants) ? product.variants : []
             setHasVariants(Boolean(product.hasVariants))
@@ -357,6 +369,14 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
             attributes.metalDetails = metalDetails
             attributes.generalDetails = generalDetails
             formData.append('attributes', JSON.stringify(attributes))
+            
+            // Price Breakup fields
+            if (productInfo.goldType) formData.append('goldType', productInfo.goldType)
+            if (productInfo.goldWeight) formData.append('goldWeight', productInfo.goldWeight)
+            if (productInfo.goldRate) formData.append('goldRate', productInfo.goldRate)
+            if (productInfo.stoneWeight) formData.append('stoneWeight', productInfo.stoneWeight)
+            if (productInfo.stonePrice) formData.append('stonePrice', productInfo.stonePrice)
+            if (productInfo.makingCharges) formData.append('makingCharges', productInfo.makingCharges)
 
             // Also send as top-level fields (API may accept these directly)
             formData.append('metalDetails', JSON.stringify(metalDetails))
@@ -587,6 +607,92 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                         </div>
                     </div>
 
+                    {/* Section 2.5: Price Breakup (Gold, Stone, Making Charges) */}
+                    <div className="bg-white rounded-lg shadow-md p-8 border-l-4 border-yellow-500">
+                        <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                            <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm">2.5</span>
+                            Price Breakup (Optional)
+                        </h2>
+                        <p className="text-sm text-slate-600 mb-6">Enter gold details, stone details, and making charges to display a detailed price breakdown on the product page.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Gold Type</label>
+                                <select 
+                                    name="goldType" 
+                                    value={productInfo.goldType} 
+                                    onChange={onChangeHandler} 
+                                    className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"
+                                >
+                                    <option value="">Select Gold Type</option>
+                                    <option value="yellow">Yellow Gold</option>
+                                    <option value="white">White Gold</option>
+                                    <option value="rose">Rose Gold</option>
+                                    <option value="platinum">Platinum</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Gold Weight (grams)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.001" 
+                                    name="goldWeight" 
+                                    value={productInfo.goldWeight} 
+                                    onChange={onChangeHandler} 
+                                    className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
+                                    placeholder="0.000"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Gold Rate (per gram)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="goldRate" 
+                                    value={productInfo.goldRate} 
+                                    onChange={onChangeHandler} 
+                                    className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
+                                    placeholder="0.00"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Stone Weight (carats)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.001" 
+                                    name="stoneWeight" 
+                                    value={productInfo.stoneWeight} 
+                                    onChange={onChangeHandler} 
+                                    className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
+                                    placeholder="0.000"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Stone Price (AED)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="stonePrice" 
+                                    value={productInfo.stonePrice} 
+                                    onChange={onChangeHandler} 
+                                    className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
+                                    placeholder="0.00"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Making Charges (AED)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="makingCharges" 
+                                    value={productInfo.makingCharges} 
+                                    onChange={onChangeHandler} 
+                                    className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
+                                    placeholder="0.00"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Section 3: Descriptions & Tags */}
                     <div className="bg-white rounded-lg shadow-md p-8 border-l-4 border-purple-500">
                         <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
@@ -702,18 +808,18 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                             <span className="bg-rose-500 text-white px-3 py-1 rounded-full text-sm">5</span>
                             Jewelry Details
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <section className="space-y-4">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-bold text-rose-600">💎 Metal Details</h3>
-                                    <button type="button" className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded text-sm font-semibold transition" onClick={addDetailRow(setMetalDetails)}>+ Add</button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <section className="space-y-3 bg-slate-50 border border-rose-100 rounded-xl p-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-base font-bold text-rose-600">💎 Metal Details</h3>
+                                    <button type="button" className="px-3 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md text-sm font-semibold transition" onClick={addDetailRow(setMetalDetails)}>+ Add</button>
                                 </div>
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     {metalDetails.map((it, idx) => (
-                                        <div key={idx} className="flex gap-2">
-                                            <input className="flex-1 border-2 border-slate-200 rounded-lg px-3 py-2 focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Label" value={it.label} onChange={(e)=>updateDetail(setMetalDetails)(idx,'label', e.target.value)} />
-                                            <input className="flex-1 border-2 border-slate-200 rounded-lg px-3 py-2 focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Value" value={it.value} onChange={(e)=>updateDetail(setMetalDetails)(idx,'value', e.target.value)} />
-                                            <button type="button" className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition" onClick={()=>removeDetailRow(setMetalDetails)(idx)}>✕</button>
+                                        <div key={idx} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
+                                            <input className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Label" value={it.label} onChange={(e)=>updateDetail(setMetalDetails)(idx,'label', e.target.value)} />
+                                            <input className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Value" value={it.value} onChange={(e)=>updateDetail(setMetalDetails)(idx,'value', e.target.value)} />
+                                            <button type="button" className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition" onClick={()=>removeDetailRow(setMetalDetails)(idx)}>✕</button>
                                         </div>
                                     ))}
                                     {metalDetails.length === 0 && (
@@ -721,17 +827,17 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                     )}
                                 </div>
                             </section>
-                            <section className="space-y-4">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-bold text-rose-600">✨ General Details</h3>
-                                    <button type="button" className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded text-sm font-semibold transition" onClick={addDetailRow(setGeneralDetails)}>+ Add</button>
+                            <section className="space-y-3 bg-slate-50 border border-rose-100 rounded-xl p-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-base font-bold text-rose-600">✨ General Details</h3>
+                                    <button type="button" className="px-3 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md text-sm font-semibold transition" onClick={addDetailRow(setGeneralDetails)}>+ Add</button>
                                 </div>
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     {generalDetails.map((it, idx) => (
-                                        <div key={idx} className="flex gap-2">
-                                            <input className="flex-1 border-2 border-slate-200 rounded-lg px-3 py-2 focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Label" value={it.label} onChange={(e)=>updateDetail(setGeneralDetails)(idx,'label', e.target.value)} />
-                                            <input className="flex-1 border-2 border-slate-200 rounded-lg px-3 py-2 focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Value" value={it.value} onChange={(e)=>updateDetail(setGeneralDetails)(idx,'value', e.target.value)} />
-                                            <button type="button" className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition" onClick={()=>removeDetailRow(setGeneralDetails)(idx)}>✕</button>
+                                        <div key={idx} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
+                                            <input className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Label" value={it.label} onChange={(e)=>updateDetail(setGeneralDetails)(idx,'label', e.target.value)} />
+                                            <input className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Value" value={it.value} onChange={(e)=>updateDetail(setGeneralDetails)(idx,'value', e.target.value)} />
+                                            <button type="button" className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition" onClick={()=>removeDetailRow(setGeneralDetails)(idx)}>✕</button>
                                         </div>
                                     ))}
                                     {generalDetails.length === 0 && (

@@ -1,9 +1,9 @@
-import dbConnect from "@/lib/mongodb";
+import connectDB from "@/lib/mongoose";
 import Product from "@/models/Product";
 import { NextResponse } from "next/server";
 
 export async function GET(request) {
-    await dbConnect();
+    await connectDB();
     const { searchParams } = new URL(request.url);
     const slug = searchParams.get("slug");
     if (!slug) {
@@ -11,7 +11,7 @@ export async function GET(request) {
     }
     // Only select needed fields for performance
     const product = await Product.findOne({ slug })
-        .select('name slug description shortDescription AED price images category sku inStock stockQuantity hasVariants variants attributes hasBulkPricing bulkPricing fastDelivery allowReturn allowReplacement storeId createdAt updatedAt')
+        .select('name slug description shortDescription AED price images category sku inStock stockQuantity hasVariants variants attributes hasBulkPricing bulkPricing fastDelivery enableEnquiry allowReturn allowReplacement storeId createdAt updatedAt goldType goldWeight goldRate stoneWeight stonePrice makingCharges')
         .lean();
     if (!product) {
         return NextResponse.json({ error: "Product not found" }, { status: 404 });

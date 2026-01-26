@@ -28,6 +28,11 @@ const ProductDetails = ({ product, reviews = [] }) => {
   const [showWishlistToast, setShowWishlistToast] = useState(false);
   const [wishlistMessage, setWishlistMessage] = useState('');
   const [showCartToast, setShowCartToast] = useState(false);
+  const [showEnquiryModal, setShowEnquiryModal] = useState(false);
+  const [enquiryName, setEnquiryName] = useState('');
+  const [enquiryEmail, setEnquiryEmail] = useState('');
+  const [enquiryPhone, setEnquiryPhone] = useState('');
+  const [enquiryMessage, setEnquiryMessage] = useState('');
   const { isSignedIn } = useAuth();
   const router = useRouter();
   const dispatch = useDispatch();
@@ -78,10 +83,44 @@ const ProductDetails = ({ product, reviews = [] }) => {
   const shareMenuRef = useRef(null);
   const [isFading, setIsFading] = useState(false);
   const [dashboardDetails, setDashboardDetails] = useState(null);
+  const [activeTab, setActiveTab] = useState('details'); // 'details' or 'priceBreakup'
+  const [liveGoldRate, setLiveGoldRate] = useState(null);
+  const normalizeGoldType = (val) => {
+    if (!val) return null;
+    const t = String(val).toLowerCase();
+    if (t.includes('yellow')) return 'yellow';
+    if (t.includes('white')) return 'white';
+    if (t.includes('rose')) return 'rose';
+    if (t.includes('platinum')) return 'platinum';
+    return t;
+  };
+
+  const getGoldTypeOptions = () => {
+    const fromDashboard = normalizeGoldType(dashboardDetails?.goldType);
+    const fromProduct = normalizeGoldType(product.goldType);
+    const unique = new Set([fromDashboard, fromProduct].filter(Boolean));
+    if (unique.size > 0) return Array.from(unique);
+    return ['yellow', 'white', 'rose', 'platinum'];
+  };
+
+  const goldTypeOptions = getGoldTypeOptions();
+  const [selectedGoldType, setSelectedGoldType] = useState(normalizeGoldType(product.goldType) || goldTypeOptions[0] || 'yellow');
+  const [expandedSections, setExpandedSections] = useState({
+    metal: true,
+    general: true,
+    description: true,
+  });
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
   const formatMoney = (val) => {
     const num = Number(val);
     if (Number.isNaN(num)) return '0';
-    return num.toLocaleString('en-IN');
+    return num.toLocaleString('en-AE', { maximumFractionDigits: 2, minimumFractionDigits: 0 });
   };
 
   useEffect(() => {
@@ -91,6 +130,17 @@ const ProductDetails = ({ product, reviews = [] }) => {
     return () => clearTimeout(t);
   }, [mainImage]);
 
+  // Prepare default enquiry message with product details
+  useEffect(() => {
+    const link = typeof window !== 'undefined' ? window.location.href : '';
+    const firstImage = product.images?.[0] || '';
+    setEnquiryMessage(
+      `Hello, I'm interested in ${product.name} (SKU: ${product.sku || 'NA'}).\n` +
+      (product.brand ? `Brand: ${product.brand}\n` : '') +
+      `Product link: ${link}\nProduct image: ${firstImage}\n\nPlease let me know more details.`
+    );
+  }, [product._id]);
+
   // Load dashboard-provided overrides (from localStorage) if present
   useEffect(() => {
     try {
@@ -98,6 +148,11 @@ const ProductDetails = ({ product, reviews = [] }) => {
       setDashboardDetails(map?.[product._id] || null);
     } catch {}
   }, [product._id]);
+
+  useEffect(() => {
+    const normalized = normalizeGoldType(dashboardDetails?.goldType) || normalizeGoldType(product.goldType) || goldTypeOptions[0] || 'yellow';
+    setSelectedGoldType(normalized);
+  }, [dashboardDetails?.goldType, product.goldType]);
 
   // Wishlist status
   useEffect(() => {
@@ -113,6 +168,22 @@ const ProductDetails = ({ product, reviews = [] }) => {
       } catch {}
     })();
   }, [isSignedIn, product._id]);
+
+  // Fetch live gold rate if product has gold
+  useEffect(() => {
+    if (product.goldType && !product.goldRate) {
+      (async () => {
+        try {
+          const { data } = await axios.get('/api/gold-rate');
+          if (data?.rate) {
+            setLiveGoldRate(data.rate);
+          }
+        } catch (err) {
+          console.error('Failed to fetch gold rate:', err);
+        }
+      })();
+    }
+  }, [product.goldType, product.goldRate]);
 
   // Share menu outside click
   useEffect(() => {
@@ -194,6 +265,28 @@ const ProductDetails = ({ product, reviews = [] }) => {
         setShowShareMenu(false);
       }, 2000);
     } catch {}
+  };
+
+  const handleEnquirySubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('/api/appointment', {
+        name: enquiryName,
+        email: enquiryEmail,
+        phone: enquiryPhone,
+        message: enquiryMessage,
+        productId: product._id,
+        image: product.images?.[0] || null,
+      });
+      setShowEnquiryModal(false);
+      setEnquiryName('');
+      setEnquiryEmail('');
+      setEnquiryPhone('');
+      alert('Your enquiry has been sent. Our team will contact you soon.');
+    } catch (err) {
+      console.error('Failed to send enquiry', err);
+      alert('Failed to send enquiry. Please try again later.');
+    }
   };
 
   const handleOrderNow = () => {
@@ -339,10 +432,57 @@ const ProductDetails = ({ product, reviews = [] }) => {
         </div>
       </div>
 
-      {/* Tanishq-style: large image left, thumbnails rail right */}
+      {/* Enquiry Modal */}
+      {showEnquiryModal && (
+        <div className="fixed inset-0 z-[10000] bg-black/40 flex items-center justify-center p-4" onClick={() => setShowEnquiryModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="grid md:grid-cols-[1fr_1.5fr] grid-cols-1">
+              <div className="relative bg-gray-50 p-4 flex items-center justify-center">
+                <div className="aspect-square w-full max-w-xs rounded-xl overflow-hidden border border-gray-200 bg-white">
+                  <Image
+                    src={product.images?.[0] || 'https://ik.imagekit.io/jrstupuke/placeholder.png'}
+                    alt={product.name}
+                    width={320}
+                    height={320}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+              </div>
+              <form className="p-6 space-y-4" onSubmit={handleEnquirySubmit}>
+                <h3 className="text-lg font-semibold text-gray-900">Product Enquiry</h3>
+                <p className="text-sm text-gray-600">Fill your details and edit the message if needed.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-gray-600">Name</label>
+                    <input type="text" value={enquiryName} onChange={(e) => setEnquiryName(e.target.value)} required className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">Email</label>
+                    <input type="email" value={enquiryEmail} onChange={(e) => setEnquiryEmail(e.target.value)} required className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">Phone</label>
+                    <input type="tel" value={enquiryPhone} onChange={(e) => setEnquiryPhone(e.target.value)} required className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                  </div>
+                  <div className="hidden md:block"></div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600">Message</label>
+                  <textarea value={enquiryMessage} onChange={(e) => setEnquiryMessage(e.target.value)} rows={5} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+                </div>
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button type="button" onClick={() => setShowEnquiryModal(false)} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cancel</button>
+                  <button type="submit" className="px-4 py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-700">Send Enquiry</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid md:grid-cols-[2fr_1fr] grid-cols-1 gap-6 items-start">
-          {/* Large display */}
+
           <div className="relative bg-white border border-gray-200 rounded-2xl overflow-hidden aspect-[4/3] md:aspect-square">
             {product.attributes?.condition === 'used' && (
               <div className="absolute top-4 left-4 z-10">
@@ -407,77 +547,344 @@ const ProductDetails = ({ product, reviews = [] }) => {
 
      
       {/* Jewellery Details Section - Moved to end */}
-      <div className="w-full flex flex-col items-center mb-8 mt-8 px-4">
-        <h2 className="text-3xl md:text-4xl font-serif font-semibold mb-4 text-gray-800">Jewellery Details</h2>
-        <div className="w-full flex justify-center mb-6">
-          <button className="bg-[#8B2323] text-white font-semibold text-lg px-16 py-3 rounded-full shadow-md">Product Details</button>
-        </div>
-        <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-          {/* Left: Details as attractive cards */}
-          <div className="space-y-8">
-            {(() => {
-              const metalItems = (dashboardDetails?.metalDetails && Array.isArray(dashboardDetails.metalDetails) && dashboardDetails.metalDetails.length)
-                ? dashboardDetails.metalDetails
-                : (product.metalDetails && Array.isArray(product.metalDetails) && product.metalDetails.length)
-                ? product.metalDetails
-                : [
-                    { label: 'Karatage', value: product.attributes?.goldPurityKarat ? `${product.attributes.goldPurityKarat}K` : null },
-                    { label: 'Material Colour', value: product.attributes?.color },
-                    { label: 'Metal', value: product.attributes?.metalType },
-                    { label: 'Size', value: product.attributes?.size },
-                  ];
-              const generalItems = (dashboardDetails?.generalDetails && Array.isArray(dashboardDetails.generalDetails) && dashboardDetails.generalDetails.length)
-                ? dashboardDetails.generalDetails
-                : (product.generalDetails && Array.isArray(product.generalDetails) && product.generalDetails.length)
-                ? product.generalDetails
-                : [
-                    { label: 'Jewellery Type', value: product.attributes?.jewelleryType },
-                    { label: 'Brand', value: product.attributes?.brand || product.brand },
-                    { label: 'Collection', value: product.attributes?.collection },
-                    { label: 'Gender', value: product.attributes?.gender },
-                    { label: 'Occasion', value: product.attributes?.occasion },
-                  ];
-              return (
-                <>
-                  <DetailsCard title="METAL DETAILS" icon="🪙" items={metalItems} />
-                  <DetailsCard title="GENERAL DETAILS" icon="🧾" items={generalItems} />
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-[#B8860B] text-xl">📄</span>
-                      <h3 className="text-base font-semibold tracking-wide text-[#B8860B]">DESCRIPTION</h3>
-                    </div>
-                    <div className="text-sm text-gray-700 prose prose-sm max-w-none [&_p]:mb-3 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-bold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-1 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:mb-1 [&_img]:max-w-full [&_img]:rounded [&_img]:my-2" dangerouslySetInnerHTML={{ __html: product.attributes?.description || product.description || '<p>No description available.</p>' }} />
+      <div className="w-full bg-white py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-serif font-semibold mb-8 text-gray-900">Jewellery Details</h2>
+          
+          {/* Tab Buttons */}
+          <div className="flex justify-center mb-8">
+            <div className="flex rounded-full border border-[#8B2323]/30 shadow-lg overflow-hidden bg-white">
+              <button 
+                onClick={() => setActiveTab('details')}
+                className={`font-semibold px-6 md:px-10 py-2 md:py-3 transition ${
+                  activeTab === 'details' 
+                    ? 'bg-[#8B2323] text-white shadow-[0_10px_25px_-10px_rgba(139,35,35,0.55)]' 
+                    : 'text-[#8B2323] bg-white'
+                }`}
+              >
+                Product Details
+              </button>
+              <button 
+                onClick={() => setActiveTab('priceBreakup')}
+                className={`font-semibold px-6 md:px-10 py-2 md:py-3 transition border-l border-[#8B2323]/20 ${
+                  activeTab === 'priceBreakup' 
+                    ? 'bg-[#8B2323] text-white shadow-[0_10px_25px_-10px_rgba(139,35,35,0.55)]' 
+                    : 'text-[#8B2323] bg-white'
+                }`}
+              >
+                <div className="flex flex-col leading-tight">
+                  <span>Price Breakup</span>
+                  <span className="text-[11px] md:text-xs font-normal opacity-80">Optional</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'details' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left: Accordion Details - Full width on mobile */}
+              <div className="lg:col-span-2 space-y-4">
+                {(() => {
+                  const metalItems = (dashboardDetails?.metalDetails && Array.isArray(dashboardDetails.metalDetails) && dashboardDetails.metalDetails.length)
+                    ? dashboardDetails.metalDetails
+                    : (product.metalDetails && Array.isArray(product.metalDetails) && product.metalDetails.length)
+                    ? product.metalDetails
+                    : [
+                        { label: 'Gold Type', value: product.goldType ? (product.goldType.charAt(0).toUpperCase() + product.goldType.slice(1)) : null },
+                        { label: 'Karatage', value: product.attributes?.goldPurityKarat ? `${product.attributes.goldPurityKarat}K` : null },
+                        { label: 'Material Colour', value: product.attributes?.color },
+                        { label: 'Metal', value: product.attributes?.metalType },
+                        { label: 'Size', value: product.attributes?.size },
+                      ];
+                  const generalItems = (dashboardDetails?.generalDetails && Array.isArray(dashboardDetails.generalDetails) && dashboardDetails.generalDetails.length)
+                    ? dashboardDetails.generalDetails
+                    : (product.generalDetails && Array.isArray(product.generalDetails) && product.generalDetails.length)
+                    ? product.generalDetails
+                    : [
+                        { label: 'Jewellery Type', value: product.attributes?.jewelleryType },
+                        { label: 'Brand', value: product.attributes?.brand || product.brand },
+                        { label: 'Collection', value: product.attributes?.collection },
+                        { label: 'Gender', value: product.attributes?.gender },
+                        { label: 'Occasion', value: product.attributes?.occasion },
+                      ];
+                  return (
+                    <>
+                      {/* Metal Details Accordion */}
+                      <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition">
+                        <button
+                          onClick={() => toggleSection('metal')}
+                          className="w-full flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-150 px-4 py-4 transition"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">🪙</span>
+                            <h3 className="text-sm md:text-base font-bold text-gray-900 uppercase tracking-wide">Metal Details</h3>
+                          </div>
+                          <svg className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${expandedSections.metal ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                          </svg>
+                        </button>
+                        {expandedSections.metal && (
+                          <div className="px-4 md:px-6 py-4 space-y-3 border-t border-gray-200 bg-white">
+                            {metalItems.filter(item => item.value).map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-center py-2 px-2 bg-gray-50 rounded">
+                                <span className="text-gray-600 text-xs md:text-sm font-medium">{item.label}</span>
+                                <span className="font-semibold text-gray-900 text-xs md:text-sm">{item.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* General Details Accordion */}
+                      <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition">
+                        <button
+                          onClick={() => toggleSection('general')}
+                          className="w-full flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-150 px-4 py-4 transition"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">📋</span>
+                            <h3 className="text-sm md:text-base font-bold text-gray-900 uppercase tracking-wide">General Details</h3>
+                          </div>
+                          <svg className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${expandedSections.general ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                          </svg>
+                        </button>
+                        {expandedSections.general && (
+                          <div className="px-4 md:px-6 py-4 space-y-3 border-t border-gray-200 bg-white">
+                            {generalItems.filter(item => item.value).map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-center py-2 px-2 bg-gray-50 rounded">
+                                <span className="text-gray-600 text-xs md:text-sm font-medium">{item.label}</span>
+                                <span className="font-semibold text-gray-900 text-xs md:text-sm text-right">{item.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Description Accordion */}
+                      <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition">
+                        <button
+                          onClick={() => toggleSection('description')}
+                          className="w-full flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-150 px-4 py-4 transition"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">📝</span>
+                            <h3 className="text-sm md:text-base font-bold text-gray-900 uppercase tracking-wide">Description</h3>
+                          </div>
+                          <svg className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${expandedSections.description ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                          </svg>
+                        </button>
+                        {expandedSections.description && (
+                          <div className="px-4 md:px-6 py-4 border-t border-gray-200 bg-white">
+                            <div className="text-xs md:text-sm text-gray-700 prose prose-sm max-w-none [&_p]:mb-3 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-bold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-1 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:mb-1 [&_img]:max-w-full [&_img]:rounded [&_img]:my-2" dangerouslySetInnerHTML={{ __html: product.attributes?.description || product.description || '<p>No description available.</p>' }} />
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Right: Product Image and Actions */}
+              <div className="lg:col-span-1 flex flex-col items-center gap-4">
+                <div className="w-full text-right text-xs text-gray-500">SKU ID : {product.sku || 'NA'}</div>
+                <div className="w-full flex justify-center">
+                  <div className="bg-white rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center aspect-square w-full max-w-xs">
+                    <Image
+                      src={product.images?.[0] || 'https://ik.imagekit.io/jrstupuke/placeholder.png'}
+                      alt={product.name}
+                      width={350}
+                      height={350}
+                      className="object-cover w-full h-full"
+                      onError={(e) => { e.currentTarget.src = 'https://ik.imagekit.io/jrstupuke/placeholder.png'; }}
+                    />
                   </div>
-                </>
+                </div>
+                {(product.fastDelivery || product.enableEnquiry) && (
+                  <div className="w-full flex flex-col gap-3">
+                    {product.fastDelivery && (
+                      <button
+                        type="button"
+                        onClick={handleOrderNow}
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-orange-600 text-white px-6 py-3 text-sm font-semibold shadow-md hover:bg-orange-700 transition"
+                      >
+                        <ShoppingCartIcon size={16} className="text-white" strokeWidth={2} />
+                        <span>Buy Now</span>
+                      </button>
+                    )}
+                    {product.enableEnquiry && (
+                      <button
+                        type="button"
+                        onClick={() => setShowEnquiryModal(true)}
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-orange-600 text-orange-700 px-6 py-3 text-sm font-semibold shadow-sm hover:bg-orange-50 transition"
+                      >
+                        <StarIcon size={16} className="text-orange-700" strokeWidth={2} />
+                        <span>Enquiry</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+                <div className="w-full text-center text-[#B8860B] text-xs py-3 border-t border-gray-200 mt-2">
+                  <span className="inline-flex items-center gap-1">
+                    <span>🪙</span>
+                    Free cleaning service!
+                  </span>
+                </div>
+              </div>
+            </div>
+        ) : (
+          /* Price Breakup Tab */
+          <div className="w-full max-w-4xl">
+            <div className="mb-6">
+              <label className="text-gray-700 font-semibold block mb-3">Select Gold Type</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {goldTypeOptions.map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setSelectedGoldType(type)}
+                    className={`px-4 py-3 rounded-lg border-2 text-sm font-semibold transition ${
+                      selectedGoldType === type
+                        ? 'border-[#8B2323] bg-[#8B2323] text-white'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-[#8B2323]'
+                    }`}
+                  >
+                    {type === 'yellow' && '🪙 Yellow'}
+                    {type === 'white' && '🩶 White'}
+                    {type === 'rose' && '🌹 Rose'}
+                    {type === 'platinum' && '⭐ Platinum'}
+                    {!['yellow','white','rose','platinum'].includes(type) && type}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {(() => {
+              const goldWeight = Number(product.goldWeight) || 0;
+              const goldRate = Number(product.goldRate) || (liveGoldRate || 0);
+              const stoneWeight = Number(product.stoneWeight) || 0;
+              const stonePrice = Number(product.stonePrice) || 0;
+              const makingCharges = Number(product.makingCharges) || 0;
+              
+              const hasPriceData = goldWeight > 0 || stoneWeight > 0 || stonePrice > 0 || makingCharges > 0 || Number(product.price) > 0;
+              const goldValue = goldWeight * goldRate;
+              const subTotal = goldValue + stonePrice;
+              const discount = Number(product.AED) > Number(product.price) ? (Number(product.AED) - Number(product.price)) : 0;
+              const subtotalAfterDiscount = subTotal + makingCharges - discount;
+              const gst = subtotalAfterDiscount * 0.05; // 5% GST
+              const grandTotal = subtotalAfterDiscount + gst;
+              
+              const goldTypeDisplay = {
+                yellow: 'Yellow Gold',
+                white: 'White Gold',
+                rose: 'Rose Gold',
+                platinum: 'Platinum'
+              }[selectedGoldType] || selectedGoldType || 'Gold';
+              
+              if (!hasPriceData) {
+                return (
+                  <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center text-gray-700">
+                    <div className="text-3xl mb-3">ℹ️</div>
+                    <p className="text-sm md:text-base font-semibold">Price breakup is not available for this product.</p>
+                    <p className="text-xs text-gray-500 mt-2">Please contact support for a detailed quotation.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase">Product Details</th>
+                        <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase">Rate</th>
+                        <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase">Weight</th>
+                        <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase">Discount</th>
+                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700 uppercase">Value</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {goldWeight > 0 && (
+                        <tr className="hover:bg-gray-50 transition">
+                          <td className="px-6 py-4 flex items-center gap-3">
+                            <span className="text-2xl">🪙</span>
+                            <div>
+                              <div className="font-semibold text-gray-900">{goldTypeDisplay}</div>
+                              <div className="text-xs text-gray-500">14KT</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center text-gray-700">AED {formatMoney(goldRate)}/g</td>
+                          <td className="px-6 py-4 text-center text-gray-700">{goldWeight.toFixed(3)}g</td>
+                          <td className="px-6 py-4 text-center text-gray-700">-</td>
+                          <td className="px-6 py-4 text-right font-semibold text-gray-900">₹ {formatMoney(goldValue.toFixed(2))}</td>
+                        </tr>
+                      )}
+                      
+                      {stoneWeight > 0 && (
+                        <tr className="hover:bg-gray-50 transition">
+                          <td className="px-6 py-4 flex items-center gap-3">
+                            <span className="text-2xl">💎</span>
+                            <div>
+                              <div className="font-semibold text-gray-900">Stone</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center text-gray-700">-</td>
+                          <td className="px-6 py-4 text-center text-gray-700">{stoneWeight.toFixed(3)} ct / {(stoneWeight * 0.085).toFixed(3)} g</td>
+                          <td className="px-6 py-4 text-center text-gray-700">-</td>
+                          <td className="px-6 py-4 text-right font-semibold text-gray-900">AED {formatMoney(stonePrice.toFixed(0))}</td>
+                        </tr>
+                      )}
+                      
+                      {makingCharges > 0 && (
+                        <tr className="hover:bg-gray-50 transition">
+                          <td className="px-6 py-4 font-semibold text-gray-700" colSpan="4">Making Charges</td>
+                          <td className="px-6 py-4 text-right font-semibold text-gray-900">AED {formatMoney(makingCharges.toFixed(2))}</td>
+                        </tr>
+                      )}
+                      
+                      <tr className="bg-gray-50 font-semibold">
+                        <td className="px-6 py-4 text-gray-900" colSpan="4">Sub Total</td>
+                        <td className="px-6 py-4 text-right text-gray-900">AED {formatMoney(subTotal.toFixed(2))}</td>
+                      </tr>
+                      
+                      <tr className="bg-gray-50 font-semibold">
+                        <td className="px-6 py-4 text-gray-700" colSpan="3"></td>
+                        <td className="px-6 py-4 text-center font-semibold text-gray-700">{goldWeight.toFixed(3)}g<br/>Gross Wt.</td>
+                        <td className="px-6 py-4 text-right text-gray-900">AED {formatMoney(subTotal.toFixed(2))}</td>
+                      </tr>
+                      
+                      {discount > 0 && (
+                        <tr className="hover:bg-gray-50 transition">
+                          <td className="px-6 py-4 text-gray-700" colSpan="4">Discount</td>
+                          <td className="px-6 py-4 text-right text-green-600 font-semibold">-AED {formatMoney(discount.toFixed(2))}</td>
+                        </tr>
+                      )}
+                      
+                      <tr className="hover:bg-gray-50 transition">
+                        <td className="px-6 py-4 text-gray-700" colSpan="4">Subtotal after Discount</td>
+                        <td className="px-6 py-4 text-right font-semibold text-gray-900">AED {formatMoney(subtotalAfterDiscount.toFixed(2))}</td>
+                      </tr>
+                      
+                      <tr className="hover:bg-gray-50 transition">
+                        <td className="px-6 py-4 text-gray-700" colSpan="4">GST</td>
+                        <td className="px-6 py-4 text-right font-semibold text-gray-900">AED {formatMoney(gst.toFixed(2))}</td>
+                      </tr>
+                      
+                      <tr className="bg-gray-900 text-white">
+                        <td className="px-6 py-5 text-lg font-bold" colSpan="4">Grand Total</td>
+                        <td className="px-6 py-5 text-right text-xl font-bold">AED {formatMoney(grandTotal.toFixed(0))}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               );
             })()}
           </div>
-          {/* Right: Main Image, SKU, Note */}
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-full flex justify-end text-xs text-gray-500 mb-2">SKU ID : {product.sku || 'NA'}</div>
-            <div className="w-full flex justify-center">
-              <div className="bg-white rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center aspect-square max-w-xs w-full">
-                <Image
-                  src={product.images?.[0] || 'https://ik.imagekit.io/jrstupuke/placeholder.png'}
-                  alt={product.name}
-                  width={350}
-                  height={350}
-                  className="object-cover w-full h-full"
-                  onError={(e) => { e.currentTarget.src = 'https://ik.imagekit.io/jrstupuke/placeholder.png'; }}
-                />
-              </div>
-            </div>
-            <div className="w-full text-center text-[#B8860B] text-xs py-2 border-t border-gray-100">
-              <span className="inline-flex items-center gap-1">
-                <span>🪙</span>
-                Enjoy sparkling jewellery! We provide free jewellery cleaning service!
-              </span>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
+    </div>
 
-      {/* Wishlist Toast */}
+    {/* Wishlist Toast */}
       {showWishlistToast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 md:bottom-8 md:right-8 md:left-auto md:translate-x-0 bg-white border-2 border-orange-500 rounded-xl shadow-2xl px-6 py-4 flex items-center gap-3 z-[9999] animate-slide-up max-w-[90vw] md:max-w-none">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${wishlistMessage.includes('Added') ? 'bg-green-100' : 'bg-red-100'}`}>

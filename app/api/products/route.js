@@ -1,12 +1,12 @@
-import dbConnect from "@/lib/mongodb";
+import connectDB from "@/lib/mongoose";
 import Product from "@/models/Product";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
     try {
-        await dbConnect();
+        await connectDB();
         const body = await request.json();
-        const { name, description, shortDescription, AED, price, images, category, sku, inStock, hasVariants, variants, attributes, hasBulkPricing, bulkPricing, fastDelivery, allowReturn, allowReplacement, storeId, slug } = body;
+        const { name, description, shortDescription, AED, price, images, category, sku, inStock, hasVariants, variants, attributes, hasBulkPricing, bulkPricing, fastDelivery, allowReturn, allowReplacement, storeId, slug, enableEnquiry, goldType, goldWeight, goldRate, stoneWeight, stonePrice, makingCharges } = body;
 
         // Generate slug from name if not provided
         const productSlug = slug || name
@@ -40,6 +40,13 @@ export async function POST(request) {
             allowReturn,
             allowReplacement,
             storeId,
+            enableEnquiry,
+            goldType,
+            goldWeight,
+            goldRate,
+            stoneWeight,
+            stonePrice,
+            makingCharges,
         });
 
         return NextResponse.json({ product }, { status: 201 });
@@ -52,7 +59,7 @@ export async function POST(request) {
 
 export async function GET(request){
     try {
-        await dbConnect();
+        await connectDB();
         const { searchParams } = new URL(request.url);
         const sortBy = searchParams.get('sortBy');
         const limit = parseInt(searchParams.get('limit') || '50', 10); // increased default
@@ -90,7 +97,7 @@ export async function GET(request){
         
         // Optimized query with field selection
         let products = await Product.find(query)
-            .select('name slug description shortDescription AED price images category sku hasVariants variants attributes fastDelivery stockQuantity createdAt tags')
+            .select('name slug description shortDescription AED price images category sku inStock hasVariants variants attributes fastDelivery enableEnquiry stockQuantity createdAt tags goldType goldWeight goldRate stoneWeight stonePrice makingCharges')
             .sort({ createdAt: -1 })
             .skip(offset)
             .limit(limit)
@@ -101,7 +108,7 @@ export async function GET(request){
         console.log('[API /api/products] Products returned:', products.map(p => ({ name: p.name, category: p.category, slug: p.slug })));
 
         // Add discount label and review stats if applicable
-        const Rating = require('@/models/Rating');
+        const Rating = (await import('@/models/Rating')).default;
         products = await Promise.all(products.map(async product => {
             try {
                 let label = null;

@@ -189,6 +189,22 @@ export async function POST(request) {
             }
         }
 
+        // Price Breakup fields
+        const goldType = formData.get("goldType") || null;
+        const goldWeight = formData.get("goldWeight") ? Number(formData.get("goldWeight")) : 0;
+        const goldRate = formData.get("goldRate") ? Number(formData.get("goldRate")) : 0;
+        const stoneWeight = formData.get("stoneWeight") ? Number(formData.get("stoneWeight")) : 0;
+        const stonePrice = formData.get("stonePrice") ? Number(formData.get("stonePrice")) : 0;
+        const makingCharges = formData.get("makingCharges") ? Number(formData.get("makingCharges")) : 0;
+        const metalDetailsRaw = formData.get("metalDetails");
+        const generalDetailsRaw = formData.get("generalDetails");
+        let metalDetails = [];
+        let generalDetails = [];
+        try {
+            if (metalDetailsRaw) metalDetails = JSON.parse(metalDetailsRaw) || [];
+            if (generalDetailsRaw) generalDetails = JSON.parse(generalDetailsRaw) || [];
+        } catch {}
+
         const product = await Product.create({
             name,
             slug,
@@ -207,6 +223,14 @@ export async function POST(request) {
             stockQuantity,
             tags,
             storeId,
+            goldType,
+            goldWeight,
+            goldRate,
+            stoneWeight,
+            stonePrice,
+            makingCharges,
+            metalDetails,
+            generalDetails,
         });
 
         return NextResponse.json({ message: "Product added successfully", product });
@@ -352,6 +376,22 @@ export async function PUT(request) {
             } catch {}
         }
 
+        // Price Breakup fields for update
+        const goldType = formData.get("goldType") || product.goldType;
+        const goldWeight = formData.get("goldWeight") ? Number(formData.get("goldWeight")) : product.goldWeight;
+        const goldRate = formData.get("goldRate") ? Number(formData.get("goldRate")) : product.goldRate;
+        const stoneWeight = formData.get("stoneWeight") ? Number(formData.get("stoneWeight")) : product.stoneWeight;
+        const stonePrice = formData.get("stonePrice") ? Number(formData.get("stonePrice")) : product.stonePrice;
+        const makingCharges = formData.get("makingCharges") ? Number(formData.get("makingCharges")) : product.makingCharges;
+        const metalDetailsRaw = formData.get("metalDetails");
+        const generalDetailsRaw = formData.get("generalDetails");
+        let metalDetails = product.metalDetails || [];
+        let generalDetails = product.generalDetails || [];
+        try {
+            if (metalDetailsRaw) metalDetails = JSON.parse(metalDetailsRaw) || [];
+            if (generalDetailsRaw) generalDetails = JSON.parse(generalDetailsRaw) || [];
+        } catch {}
+
         // If slug is provided and changed, check uniqueness
         let updateData = {
             name,
@@ -367,6 +407,14 @@ export async function PUT(request) {
             attributes,
             inStock,
             fastDelivery,
+            goldType,
+            goldWeight,
+            goldRate,
+            stoneWeight,
+            stonePrice,
+            makingCharges,
+            metalDetails,
+            generalDetails,
         };
 
         if (tags !== undefined) {
