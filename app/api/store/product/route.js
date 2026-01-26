@@ -205,6 +205,10 @@ export async function POST(request) {
             if (generalDetailsRaw) generalDetails = JSON.parse(generalDetailsRaw) || [];
         } catch {}
 
+        // Button visibility
+        const showBuyButton = String(formData.get("showBuyButton") || "true").toLowerCase() === "true";
+        const showEnquiryButton = String(formData.get("showEnquiryButton") || "true").toLowerCase() === "true";
+
         const product = await Product.create({
             name,
             slug,
@@ -231,6 +235,8 @@ export async function POST(request) {
             makingCharges,
             metalDetails,
             generalDetails,
+            showBuyButton,
+            showEnquiryButton,
         });
 
         return NextResponse.json({ message: "Product added successfully", product });
@@ -392,6 +398,10 @@ export async function PUT(request) {
             if (generalDetailsRaw) generalDetails = JSON.parse(generalDetailsRaw) || [];
         } catch {}
 
+        // Button visibility for update
+        const showBuyButton = formData.get("showBuyButton") !== null ? String(formData.get("showBuyButton")).toLowerCase() === "true" : product.showBuyButton;
+        const showEnquiryButton = formData.get("showEnquiryButton") !== null ? String(formData.get("showEnquiryButton")).toLowerCase() === "true" : product.showEnquiryButton;
+
         // If slug is provided and changed, check uniqueness
         let updateData = {
             name,
@@ -415,6 +425,8 @@ export async function PUT(request) {
             makingCharges,
             metalDetails,
             generalDetails,
+            showBuyButton,
+            showEnquiryButton,
         };
 
         if (tags !== undefined) {

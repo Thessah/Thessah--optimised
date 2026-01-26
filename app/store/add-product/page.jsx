@@ -93,6 +93,8 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
         allowReturn: true,
         allowReplacement: true,
         enquiryOnly: false,
+        showBuyButton: true,
+        showEnquiryButton: true,
         reviews: [],
         badges: [], // Array of badge labels like "Price Lower Than Usual", "Hot Deal", etc.
         tags: [],
@@ -210,6 +212,8 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                 fastDelivery: product.fastDelivery || false,
                 allowReturn: product.allowReturn !== undefined ? product.allowReturn : true,
                 allowReplacement: product.allowReplacement !== undefined ? product.allowReplacement : true,
+                showBuyButton: product.showBuyButton !== undefined ? product.showBuyButton : true,
+                showEnquiryButton: product.showEnquiryButton !== undefined ? product.showEnquiryButton : true,
                 reviews: product.reviews || [],
                 badges: product.attributes?.badges || [],
                 tags: product.tags || [],
@@ -797,6 +801,14 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                 <label className="flex items-center gap-3 p-4 border-2 border-slate-200 rounded-lg hover:border-amber-500 cursor-pointer transition">
                                     <input type="checkbox" checked={productInfo.enquiryOnly} onChange={(e)=> setProductInfo(p=>({...p, enquiryOnly: e.target.checked}))} className="w-5 h-5" />
                                     <span className="font-medium text-slate-700">❓ Enquiry Only</span>
+                                </label>
+                                <label className="flex items-center gap-3 p-4 border-2 border-slate-200 rounded-lg hover:border-amber-500 cursor-pointer transition">
+                                    <input type="checkbox" checked={productInfo.showBuyButton} onChange={(e)=> setProductInfo(p=>({...p, showBuyButton: e.target.checked}))} className="w-5 h-5" />
+                                    <span className="font-medium text-slate-700">🛒 Show Buy Button</span>
+                                </label>
+                                <label className="flex items-center gap-3 p-4 border-2 border-slate-200 rounded-lg hover:border-amber-500 cursor-pointer transition">
+                                    <input type="checkbox" checked={productInfo.showEnquiryButton} onChange={(e)=> setProductInfo(p=>({...p, showEnquiryButton: e.target.checked}))} className="w-5 h-5" />
+                                    <span className="font-medium text-slate-700">📞 Show Enquiry Button</span>
                                 </label>
                             </div>
                         </div>

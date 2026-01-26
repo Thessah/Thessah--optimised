@@ -702,9 +702,9 @@ const ProductDetails = ({ product, reviews = [] }) => {
                     />
                   </div>
                 </div>
-                {(product.fastDelivery || product.enableEnquiry) && (
+                {((product.fastDelivery && product.showBuyButton !== false) || (product.enableEnquiry && product.showEnquiryButton !== false)) && (
                   <div className="w-full flex flex-col gap-3">
-                    {product.fastDelivery && (
+                    {product.fastDelivery && product.showBuyButton !== false && (
                       <button
                         type="button"
                         onClick={handleOrderNow}
@@ -714,7 +714,7 @@ const ProductDetails = ({ product, reviews = [] }) => {
                         <span>Buy Now</span>
                       </button>
                     )}
-                    {product.enableEnquiry && (
+                    {product.enableEnquiry && product.showEnquiryButton !== false && (
                       <button
                         type="button"
                         onClick={() => setShowEnquiryModal(true)}
