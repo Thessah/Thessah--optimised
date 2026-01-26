@@ -70,8 +70,53 @@ export default function ShopByGender() {
           </p>
         </div>
 
-        {/* Three Column Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        {/* Mobile: Horizontal Carousel | Desktop: Grid */}
+        <div className="sm:hidden relative">
+          {/* Mobile Carousel */}
+          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 px-2">
+            {genderCategories.map((category, index) => (
+              <Link
+                key={index}
+                href={category.link || '#'}
+                className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 flex-shrink-0 w-[85vw] snap-center"
+              >
+                {/* Background Image */}
+                <div className="aspect-[3/4] relative">
+                  {category.image && (
+                    <img
+                      src={category.image}
+                      alt={category.title}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                  )}
+                  
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                </div>
+                
+                {/* Title */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
+                  <h3 className="text-xl font-serif text-white drop-shadow-lg">
+                    {category.title}
+                  </h3>
+                </div>
+              </Link>
+            ))}
+          </div>
+          
+          {/* Carousel Indicators */}
+          <div className="flex justify-center gap-2 mt-4">
+            {genderCategories.map((_, index) => (
+              <div
+                key={index}
+                className="w-2 h-2 rounded-full bg-gray-300"
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Desktop: Three Column Grid */}
+        <div className="hidden sm:grid sm:grid-cols-3 gap-4 sm:gap-6">
           {genderCategories.map((category, index) => (
             <Link
               key={index}
@@ -102,6 +147,16 @@ export default function ShopByGender() {
           ))}
         </div>
       </div>
+
+      <style jsx>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </section>
   )
 }

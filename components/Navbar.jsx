@@ -14,7 +14,7 @@ console.log("Firebase UID:", getAuth().currentUser?.uid);
 import Image from 'next/image';
 import axios from "axios";
 import toast from "react-hot-toast";
-import Logo from "../assets/logo/Thessahlogo.png";
+import Logo from "../assets/logo/logo.png";
 import Truck from '../assets/delivery.png';
 import SignInModal from './SignInModal';
 
@@ -124,16 +124,16 @@ const Navbar = () => {
 
   // Product names for animated placeholder
   const productNames = [
-    "Wireless Headphones",
-    "Smart Watch",
-    "Running Shoes",
-    "Coffee Maker",
-    "Gaming Mouse",
-    "Yoga Mat",
-    "Sunglasses",
-    "Laptop Bag",
-    "Water Bottle",
-    "Phone Case"
+    "Gold Necklace",
+    "Diamond Ring",
+    "Pearl Earrings",
+    "Bridal Set",
+    "Gold Bangles",
+    "Silver Anklet",
+    "Gemstone Pendant",
+    "Wedding Rings",
+    "Platinum Chain",
+    "Temple Jewellery"
   ];
 
   // Typewriter effect for search placeholder
@@ -395,7 +395,7 @@ const Navbar = () => {
             
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-              <Image src={Logo} alt="Qui Logo" width={140} height={40} className="object-contain" priority />
+              <Image src={Logo} alt="Qui Logo" width={180} height={48} className="object-contain" priority />
             </Link>
           </div>
 

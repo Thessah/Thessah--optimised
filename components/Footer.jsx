@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import Logo from "../assets/logo/Thessahlogo.png";
+import Logo from "../assets/logo/logo.png";
 
 const Footer = () => {
     const [footerSections, setFooterSections] = useState([
@@ -84,8 +84,8 @@ const Footer = () => {
                             <Image
                                 src={Logo}
                                 alt="Logo"
-                                width={180}
-                                height={45}
+                                width={220}
+                                height={55}
                                 className="object-contain brightness-0 invert"
                                 priority
                             />

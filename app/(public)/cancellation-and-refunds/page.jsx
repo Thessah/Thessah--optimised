@@ -6,14 +6,25 @@ export const metadata = {
 export default function CancellationAndRefunds() {
   return (
     <div className="max-w-3xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-6">Cancellation & Refund Policy</h1>
+      {/* Breadcrumb at top */}
+      <nav className="mb-6 px-2 py-2 bg-gradient-to-b from-gray-100 to-transparent rounded-t-lg shadow-sm w-full">
+        <span className="text-green-700">Home</span>
+        <span className="mx-2">{'>'}</span>
+        <a href="/product/" className="text-gray-700 font-medium hover:underline">Product</a>
+        <span className="mx-2">{'>'}</span>
+        <span className="text-brown-700 font-semibold">Sunlit Symphony Gold Necklace Set</span>
+      </nav>
 
-      <p className="mb-4">
-        This Cancellation & Refund Policy applies to all purchases made on
-        <strong> Thessah.com</strong>, which is owned and operated by
-        <strong> Nilaas</strong>. Thessah is an e-commerce platform delivering
-        products across Kerala, India.
-      </p>
+      {/* Product Title and Price centered full width */}
+      <div className="w-full text-center my-12">
+        <h1 className="text-4xl md:text-5xl font-serif font-semibold mb-2 text-gray-800">Sunlit Symphony Gold Necklace Set</h1>
+        <div className="text-3xl font-bold mb-1 text-gray-900">₹8 20 135</div>
+        <div className="text-xs text-gray-500 mb-2">Incl. taxes and charges</div>
+        <div className="text-sm text-[#a55a4a] mt-2">*Price is indicative. Price will vary based on grammage of actual product and prevailing rate.</div>
+        {/* Actions will be added in next step */}
+      </div>
+
+      {/* ...existing code... */}
 
       <h2 className="text-xl font-semibold mt-6 mb-2">1. Order Cancellation</h2>
       <p className="mb-3">

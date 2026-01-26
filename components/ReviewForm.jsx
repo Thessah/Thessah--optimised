@@ -8,7 +8,7 @@ import { toast } from "react-hot-toast"
 import { useRouter } from "next/navigation"
 
 import { auth } from '../lib/firebase';
-export default function ReviewForm({ productId, onReviewAdded }) {
+export default function ReviewForm({ productId, onReviewAdded, autoShowForm = false }) {
     const [user, setUser] = useState(null);
     const [isSignedIn, setIsSignedIn] = useState(false);
     const [getToken, setGetToken] = useState(() => async () => null);
@@ -22,7 +22,7 @@ export default function ReviewForm({ productId, onReviewAdded }) {
         return () => unsubscribe();
     }, []);
 
-    const [showForm, setShowForm] = useState(false)
+    const [showForm, setShowForm] = useState(autoShowForm)
     const [rating, setRating] = useState(5)
     const [review, setReview] = useState('')
     const [images, setImages] = useState([])

@@ -7,7 +7,7 @@ import axios from 'axios'
 
 export default function TanishqWorld() {
   const [heading, setHeading] = useState({
-    title: 'Tanishq World',
+    title: 'Thessah World',
     subtitle: 'A companion for every occasion'
   })
   const [collections, setCollections] = useState([])
@@ -28,7 +28,7 @@ export default function TanishqWorld() {
       const dbHeading = settingsRes.data.settings?.section4Heading
       if (dbHeading) {
         setHeading({
-          title: dbHeading.title || 'Tanishq World',
+          title: dbHeading.title || 'Thessah World',
           subtitle: dbHeading.subtitle || 'A companion for every occasion'
         })
       }
@@ -78,17 +78,62 @@ export default function TanishqWorld() {
           </p>
         </div>
 
-        {/* Grid Layout - 2x2 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        {/* Mobile: Horizontal Carousel */}
+        <div className="sm:hidden relative">
+          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 px-2">
             {collections.length === 0 ? (
-              <div className="col-span-1 sm:col-span-2 text-center text-gray-500">
+              <div className="w-full text-center text-gray-500">
                 No collections configured yet.
               </div>
             ) : collections.map((collection, index) => (
+              <Link
+                key={index}
+                href={collection.link || '#'}
+                className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 flex-shrink-0 w-[85vw] h-[300px] snap-center"
+              >
+                {/* Background Image */}
+                {collection.image && (
+                  <img
+                    src={collection.image}
+                    alt={collection.title}
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                )}
+                
+                {/* Title */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <h3 className="text-3xl font-serif text-white drop-shadow-2xl">
+                    {collection.title}
+                  </h3>
+                </div>
+              </Link>
+            ))}
+          </div>
+          
+          {/* Carousel Indicators */}
+          {collections.length > 0 && (
+            <div className="flex justify-center gap-2 mt-4">
+              {collections.map((_, index) => (
+                <div
+                  key={index}
+                  className="w-2 h-2 rounded-full bg-gray-300"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop: Grid Layout - 2x2 */}
+        <div className="hidden sm:grid sm:grid-cols-2 gap-4 sm:gap-6">
+          {collections.length === 0 ? (
+            <div className="col-span-2 text-center text-gray-500">
+              No collections configured yet.
+            </div>
+          ) : collections.map((collection, index) => (
             <Link
               key={index}
               href={collection.link || '#'}
-              className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 h-[300px] sm:h-[350px] lg:h-[400px]"
+              className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 h-[350px] lg:h-[400px]"
             >
               {/* Background Image */}
               {collection.image && (
@@ -98,10 +143,6 @@ export default function TanishqWorld() {
                   className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 />
               )}
-              
-              {/* Gradient Overlay */}
-                {/* Removed gradient overlay for full-bright image */}
-                {/* <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" /> */}
               
               {/* Title */}
               <div className="absolute inset-0 flex items-center justify-center">
@@ -113,6 +154,16 @@ export default function TanishqWorld() {
           ))}
         </div>
       </div>
+
+      <style jsx>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </section>
   )
 }
