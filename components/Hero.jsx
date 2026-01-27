@@ -1,8 +1,9 @@
 'use client'
 
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import axios from 'axios'
 
 export default function Hero() {
@@ -16,19 +17,15 @@ export default function Hero() {
   const [prevTranslate, setPrevTranslate] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(true)
 
-  // Fetch banners from store API
+  // Fetch banners from store API with optimized loading
   useEffect(() => {
     const fetchBanners = async () => {
       try {
-        console.log('🔄 Fetching banners from /api/store/hero-banners...');
         const res = await axios.get('/api/store/hero-banners')
-        console.log('📦 Banners response:', res.data);
 
-        if (res.data && res.data.banners && Array.isArray(res.data.banners)) {
-          console.log('✅ Total banners in DB:', res.data.banners.length);
+        if (res.data?.banners?.length > 0) {
           // Filter only active banners
           const activeBanners = res.data.banners.filter(b => b.isActive !== false)
-          console.log('✅ Active banners:', activeBanners.length);
           
           if (activeBanners.length > 0) {
             // Convert database banners to slides format
@@ -46,19 +43,17 @@ export default function Hero() {
               showBadge: banner.showBadge !== undefined ? banner.showBadge : true,
               showButton: banner.showButton !== undefined ? banner.showButton : true
             }))
-            console.log('✅ Slides loaded from DB:', dbSlides.length);
-            console.log('🖼️ Banner images:', dbSlides.map(s => s.image));
+            
             setSlides(dbSlides)
             setLoading(false)
             return
           }
         }
-        console.log('⚠️ No DB banners found, clearing slides');
         setSlides([])
         setLoading(false)
 
       } catch (error) {
-        console.error('❌ Error fetching banners:', error.message)
+        console.error('Error fetching banners:', error.message)
         setSlides([])
         setLoading(false)
       }
@@ -81,7 +76,7 @@ export default function Hero() {
       }, 700)
       setTimeout(() => setIsTransitioning(true), 750)
     }
-  }, [index])
+  }, [index, slides.length])
 
   const prev = () => {
     setPaused(true)
@@ -125,18 +120,21 @@ export default function Hero() {
     setTimeout(() => setPaused(false), 8000)
   }
 
-  // Create infinite loop array
-  const infiniteSlides = [...slides.slice(-1), ...slides, ...slides.slice(0, 1)]
+  // Memoize infinite slides array to avoid recalculation
+  const infiniteSlides = useMemo(() => 
+    slides.length > 0 ? [...slides.slice(-1), ...slides, ...slides.slice(0, 1)] : [],
+    [slides]
+  )
+  
   const actualIndex = index + 1
 
-  // Show loading state while fetching
+  // Show minimal loading state
   if (loading) {
     return (
       <section className="relative w-full bg-white py-6 sm:py-8">
-        <div className="relative h-[280px] sm:h-[350px] lg:h-[400px] overflow-hidden px-4 sm:px-8 bg-gray-100 flex items-center justify-center rounded-xl">
-          <div className="text-center text-gray-500">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-            <p className="text-sm">Loading banners...</p>
+        <div className="relative h-[280px] sm:h-[350px] lg:h-[400px] overflow-hidden px-4 sm:px-8 bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center rounded-xl animate-pulse">
+          <div className="text-center text-gray-400">
+            <div className="w-12 h-12 border-4 border-gray-300 border-t-red-600 rounded-full animate-spin mx-auto"></div>
           </div>
         </div>
       </section>
@@ -145,17 +143,7 @@ export default function Hero() {
 
   // Don't render if no slides after loading
   if (slides.length === 0) {
-    console.log('⚠️ NO SLIDES AVAILABLE - Hero banner will not render');
-    return (
-      <section className="relative w-full bg-white py-6 sm:py-8">
-        <div className="relative h-[280px] sm:h-[350px] lg:h-[400px] overflow-hidden px-4 sm:px-8 bg-gray-200 flex items-center justify-center rounded-xl">
-          <div className="text-center text-gray-600">
-            <p className="text-lg font-semibold">No banners available</p>
-            <p className="text-sm">Loading .....</p>
-          </div>
-        </div>
-      </section>
-    )
+    return null
   }
 
   return (
@@ -167,7 +155,8 @@ export default function Hero() {
           className="flex gap-4 h-full w-full cursor-grab active:cursor-grabbing"
           style={{
             transform: `translateX(calc(-${actualIndex * 100}% - ${actualIndex * 16}px))`,
-            transition: isDragging || !isTransitioning ? 'none' : 'transform 800ms cubic-bezier(0.4, 0, 0.2, 1)'
+            transition: isDragging || !isTransitioning ? 'none' : 'transform 800ms cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform'
           }}
           onMouseDown={handleDragStart}
           onMouseMove={handleDragMove}
@@ -179,46 +168,52 @@ export default function Hero() {
         >
           {infiniteSlides.map((slide, i) => (
             <div
-              key={i}
+              key={`slide-${i}`}
               className="flex-shrink-0 w-full h-full"
             >
-              {/* Main Slide Container - Full Width, No Crop */}
-              <div 
-                className="relative w-full h-full overflow-hidden rounded-xl sm:rounded-2xl shadow-2xl bg-cover bg-center"
-                style={{
-                  backgroundImage: slide.image ? `url('${slide.image}')` : 'none',
-                  backgroundColor: slide.image ? 'transparent' : '#e5e7eb'
-                }}
-              >
+              {/* Optimized Image Container */}
+              <div className="relative w-full h-full overflow-hidden rounded-xl sm:rounded-2xl shadow-2xl bg-gray-200">
+                {slide.image && (
+                  <Image
+                    src={slide.image}
+                    alt={slide.title || 'Banner'}
+                    fill
+                    priority={i === 1} // Priority load first visible slide
+                    loading={i === 1 ? 'eager' : 'lazy'}
+                    quality={85}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
+                    className="object-cover"
+                  />
+                )}
 
-                {/* Content */}
-                <div className="absolute inset-0 flex items-center">
+                {/* Content Overlay */}
+                <div className="absolute inset-0 flex items-center bg-gradient-to-r from-black/40 to-transparent">
                   <div className="px-6 sm:px-12 lg:px-20 max-w-2xl text-white">
-                    {slide.showBadge && slide.badge && slide.badge.trim() && (
+                    {slide.showBadge && slide.badge && (
                       <span className="inline-block mb-4 px-4 py-1.5 border border-white/60 rounded-full text-xs tracking-wide bg-white/10 backdrop-blur">
                         {slide.badge}
                       </span>
                     )}
 
-                    {slide.showSubtitle && slide.subtitle && slide.subtitle.trim() && (
+                    {slide.showSubtitle && slide.subtitle && (
                       <p className="text-sm sm:text-lg mb-2 tracking-wide text-white/90">
                         {slide.subtitle}
                       </p>
                     )}
 
-                    {slide.showTitle && slide.title && slide.title.trim() && (
+                    {slide.showTitle && slide.title && (
                       <h1 className="text-3xl sm:text-4xl lg:text-6xl font-serif font-bold mb-4 drop-shadow-2xl">
                         {slide.title}
                       </h1>
                     )}
 
-                    {slide.description && slide.description.trim() && (
-                      <p className="text-sm sm:text-base lg:text-lg text-white/85 mb-6 max-w-xl">
+                    {slide.description && (
+                      <p className="text-sm sm:text-base lg:text-lg text-white/85 mb-6 max-w-xl line-clamp-3">
                         {slide.description}
                       </p>
                     )}
 
-                    {slide.showButton && slide.cta && slide.cta.trim() && slide.link && (
+                    {slide.showButton && slide.cta && slide.link && (
                       <Link
                         href={slide.link}
                         onClick={() => setPaused(true)}
@@ -237,14 +232,14 @@ export default function Hero() {
         {/* Arrows */}
         <button
           onClick={prev}
-          className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-gray-50 rounded-full p-3 sm:p-3.5 shadow-xl transition-all duration-300 hover:scale-110"
+          className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white rounded-full p-3 sm:p-3.5 shadow-xl transition-all duration-300 hover:scale-110 backdrop-blur"
           aria-label="Previous slide"
         >
           <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-900" />
         </button>
         <button
           onClick={next}
-          className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-gray-50 rounded-full p-3 sm:p-3.5 shadow-xl transition-all duration-300 hover:scale-110"
+          className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white rounded-full p-3 sm:p-3.5 shadow-xl transition-all duration-300 hover:scale-110 backdrop-blur"
           aria-label="Next slide"
         >
           <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-900" />
@@ -254,7 +249,7 @@ export default function Hero() {
         <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2.5 z-20">
           {slides.map((_, i) => (
             <button
-              key={i}
+              key={`dot-${i}`}
               onClick={() => {
                 setPaused(true)
                 setIndex(i)
@@ -263,21 +258,13 @@ export default function Hero() {
               className={`rounded-full transition-all ${
                 i === (index < 0 ? slides.length - 1 : index >= slides.length ? 0 : index)
                   ? 'w-10 sm:w-12 h-1.5 bg-red-600'
-                  : 'w-1.5 h-1.5 bg-gray-400 hover:bg-gray-600'
+                  : 'w-1.5 h-1.5 bg-white/70 hover:bg-white'
               }`}
               aria-label={`Go to slide ${i + 1}`}
             />
           ))}
         </div>
       </div>
-
-      {/* Collections heading */}
-      {/* <div className="py-8 bg-white text-center">
-        <div className="flex justify-center mb-2 text-red-600">♦</div>
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif">
-          Tanishq Collections
-        </h2>
-      </div> */}
     </section>
   )
 }

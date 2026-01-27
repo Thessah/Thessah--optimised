@@ -37,8 +37,6 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        {/* Disable auto-zoom on mobile */}
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         {/* ImageKit Optimization */}
         {ikOrigin && (
           <>
@@ -46,20 +44,9 @@ export default function RootLayout({ children }) {
             <link rel="preconnect" href={ikOrigin} crossOrigin="anonymous" />
           </>
         )}
-        {/* Google Tag Manager - HEAD */}
-        <Script id="gtm-head" strategy="afterInteractive">
-          {`
-            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-            })(window,document,'script','dataLayer','GTM-5QLZ2255');
-          `}
-        </Script>
       </head>
       <body className={`${outfit.className} antialiased`} suppressHydrationWarning>
-        <MetaPixel />
-        {/* Google Tag Manager (noscript required for browsers with JS disabled) */}
+        {/* Google Tag Manager (noscript must be immediately after <body>) */}
         <noscript>
           <iframe
             src="https://www.googletagmanager.com/ns.html?id=GTM-5QLZ2255"
@@ -68,6 +55,17 @@ export default function RootLayout({ children }) {
             style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
+        {/* Google Tag Manager - load after interactive */}
+        <Script id="gtm" strategy="afterInteractive">
+          {`
+            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','GTM-5QLZ2255');
+          `}
+        </Script>
+        <MetaPixel />
         {/* Add Navbar and Footer globally via ClientLayout */}
         <ClientLayout>{children}</ClientLayout>
       </body>

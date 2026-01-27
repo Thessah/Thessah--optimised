@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { goldPerGramFrom24K, stonesTotal } from '@/lib/pricing'
 
 // A modern, self-contained live gold rate card with an inline calculator.
 export default function GoldRateWidget({ weightGrams, purityKarat = 22, currency = 'AED', showCalculator = true }) {
@@ -16,7 +17,9 @@ export default function GoldRateWidget({ weightGrams, purityKarat = 22, currency
   const [makingType, setMakingType] = useState('percent') // 'percent' | 'flat' | 'per-gram'
   const [makingValue, setMakingValue] = useState('')
   const [wastagePct, setWastagePct] = useState('')
-  const [stoneValue, setStoneValue] = useState('')
+  const [stoneCaratWeight, setStoneCaratWeight] = useState('')
+  const [stonePricePerCarat, setStonePricePerCarat] = useState('')
+  const [otherCharges, setOtherCharges] = useState('')
   const [taxPct, setTaxPct] = useState('5') // UAE VAT default 5%
 
   const loadRates = async () => {
@@ -55,8 +58,7 @@ export default function GoldRateWidget({ weightGrams, purityKarat = 22, currency
     const g18 = rates?.rates?.perGram18K
     
     if (g24) {
-      const factor = purity / 24
-      return Math.round(g24 * factor)
+      return Math.round(goldPerGramFrom24K(g24, purity))
     }
     // Fallback to exact matches
     if (purity === 22 && g22) return g22
@@ -87,12 +89,14 @@ export default function GoldRateWidget({ weightGrams, purityKarat = 22, currency
       else if (makingType === 'per-gram') making = mv * (Number(grams) || 0)
       else making = mv // flat total
     }
-    const stones = stoneValue !== '' && !Number.isNaN(Number(stoneValue)) ? Number(stoneValue) : 0
+    const stonesCalc = stonesTotal(Number(stonePricePerCarat) || 0, Number(stoneCaratWeight) || 0)
+    const others = otherCharges !== '' && !Number.isNaN(Number(otherCharges)) ? Number(otherCharges) : 0
+    const stones = stonesCalc + others
     const subTotal = base + wastage + making + stones
     const vat = taxPct !== '' && !Number.isNaN(Number(taxPct)) ? subTotal * (Number(taxPct) / 100) : 0
     const total = subTotal + vat
-    return { base, wastage, making, stones, subTotal, vat, total }
-  }, [estValue, makingType, makingValue, wastagePct, stoneValue, taxPct, grams])
+    return { base, wastage, making, stones, subTotal, vat, total, stonesCalc, others }
+  }, [estValue, makingType, makingValue, wastagePct, stoneCaratWeight, stonePricePerCarat, otherCharges, taxPct, grams])
 
   return (
     <div className="rounded-2xl overflow-hidden shadow-sm border bg-white">
@@ -126,7 +130,7 @@ export default function GoldRateWidget({ weightGrams, purityKarat = 22, currency
         ) : (
           <div className="space-y-4">
           
-            <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl border bg-gray-50 p-3">
                 <div className="text-[11px] text-gray-500 mb-0.5">24K per gram</div>
                 <div className="text-lg font-semibold text-gray-900">{currency} {rates.rates.perGram24K?.toLocaleString()}</div>
@@ -146,6 +150,7 @@ export default function GoldRateWidget({ weightGrams, purityKarat = 22, currency
                 </div>
               )}
             </div>
+                <p className="text-[11px] text-gray-500 mt-1">Formula: 24K/g × (K/24) × grams</p>
 
            
             {showCalculator && (
@@ -258,7 +263,7 @@ export default function GoldRateWidget({ weightGrams, purityKarat = 22, currency
                 </div>
 
                 {/* Charges */}
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Making charge type</label>
                     <select
@@ -296,13 +301,38 @@ export default function GoldRateWidget({ weightGrams, purityKarat = 22, currency
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Stone/Other charges ({currency})</label>
+                    <label className="block text-xs text-gray-600 mb-1">Stone weight (carats)</label>
                     <input
                       type="number"
                       min="0"
                       step="0.01"
-                      value={stoneValue}
-                      onChange={(e) => setStoneValue(e.target.value)}
+                      value={stoneCaratWeight}
+                      onChange={(e) => setStoneCaratWeight(e.target.value)}
+                      placeholder="e.g. 1.50"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Stone price (per carat) — {currency}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={stonePricePerCarat}
+                      onChange={(e) => setStonePricePerCarat(e.target.value)}
+                      placeholder="e.g. 250"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500"
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1">Stone total = price per carat × carat weight</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Other charges ({currency})</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={otherCharges}
+                      onChange={(e) => setOtherCharges(e.target.value)}
                       placeholder="e.g. 150"
                       className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500"
                     />
@@ -330,8 +360,13 @@ export default function GoldRateWidget({ weightGrams, purityKarat = 22, currency
                     <div className="text-right font-semibold text-amber-900">{breakdown ? `${currency} ${breakdown.wastage.toLocaleString(undefined,{maximumFractionDigits:0})}` : '—'}</div>
                     <div className="text-amber-900/80">Making</div>
                     <div className="text-right font-semibold text-amber-900">{breakdown ? `${currency} ${breakdown.making.toLocaleString(undefined,{maximumFractionDigits:0})}` : '—'}</div>
-                    <div className="text-amber-900/80">Stones/Other</div>
+                    <div className="text-amber-900/80">Stones + Other</div>
                     <div className="text-right font-semibold text-amber-900">{breakdown ? `${currency} ${breakdown.stones.toLocaleString(undefined,{maximumFractionDigits:0})}` : '—'}</div>
+                    {breakdown && (
+                      <div className="col-span-2 text-[11px] text-amber-900/70">
+                        Stones detail: {currency} {Math.round(breakdown.stonesCalc).toLocaleString()} (carat × price) + Other {currency} {Math.round(breakdown.others).toLocaleString()}
+                      </div>
+                    )}
                     <div className="text-amber-900/80">Subtotal</div>
                     <div className="text-right font-semibold text-amber-900">{breakdown ? `${currency} ${breakdown.subTotal.toLocaleString(undefined,{maximumFractionDigits:0})}` : '—'}</div>
                     <div className="text-amber-900/80">VAT / Tax</div>

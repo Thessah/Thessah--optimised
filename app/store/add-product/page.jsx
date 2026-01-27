@@ -102,6 +102,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
         goldPurityKarat: '22',
         goldWeight: '',
         goldRate: '',
+        stoneType: '',
         stoneWeight: '',
         stonePrice: '',
         makingCharges: '',
@@ -123,6 +124,9 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
     const [useCalculatedPrice, setUseCalculatedPrice] = useState(false)
     const [liveMetalPrices, setLiveMetalPrices] = useState(null)
     const [fetchingPrice, setFetchingPrice] = useState(false)
+    // Stones UI helpers (local only, not sent to API)
+    const [stonePriceMode, setStonePriceMode] = useState('total') // 'total' | 'per-carat'
+    const [stonePricePerCarat, setStonePricePerCarat] = useState('')
 
     // Dynamic details (Metal / General)
     const [metalDetails, setMetalDetails] = useState([]) // [{label, value}]
@@ -201,6 +205,17 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
             }
         }
     }, [useCalculatedPrice, productInfo.goldWeight, productInfo.goldRate, productInfo.stonePrice, productInfo.makingChargePercent, productInfo.vatPercent]);
+
+    // When in per-carat mode, auto-compute total stone price
+    useEffect(() => {
+        if (stonePriceMode === 'per-carat') {
+            const c = Number(productInfo.stoneWeight) || 0
+            const p = Number(stonePricePerCarat) || 0
+            const total = c > 0 && p > 0 ? (c * p) : 0
+            setProductInfo(prev => ({ ...prev, stonePrice: total ? String(total) : '' }))
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stonePriceMode, productInfo.stoneWeight, stonePricePerCarat])
 
 
     const { user, loading: authLoading, getToken } = useAuth();
@@ -305,6 +320,13 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                 stonePrice: product.stonePrice || '',
                 makingCharges: product.makingCharges || ''
             })
+            // Init stone per-carat UI from attributes if present
+            const mode = product.attributes?.stonePriceMode
+            if (mode === 'per-carat' || mode === 'total') {
+                setStonePriceMode(mode)
+            }
+            const perCarat = product.attributes?.stonePricePerCarat
+            if (perCarat) setStonePricePerCarat(String(perCarat))
             const pv = Array.isArray(product.variants) ? product.variants : []
             setHasVariants(Boolean(product.hasVariants))
             setVariants(pv)
@@ -453,6 +475,11 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
             // Include dynamic details for future server support
             attributes.metalDetails = metalDetails
             attributes.generalDetails = generalDetails
+            // Persist stone pricing meta in attributes
+            attributes.stonePriceMode = stonePriceMode
+            if (stonePriceMode === 'per-carat' && stonePricePerCarat) {
+                attributes.stonePricePerCarat = Number(stonePricePerCarat)
+            }
             formData.append('attributes', JSON.stringify(attributes))
             
             // Price Breakup fields
@@ -784,39 +811,70 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                     placeholder="0.000"
                                 />
                             </div>
-                            <div className="relative z-10">
+                            <div className="relative isolate">
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Gold Rate (per gram) - Auto from API</label>
-                                <div className="flex gap-2 items-stretch">
+                                <div className="flex gap-2 items-center">
                                     <input 
                                         type="number" 
                                         step="0.01" 
                                         name="goldRate" 
                                         value={productInfo.goldRate} 
                                         onChange={onChangeHandler} 
-                                        className="flex-1 border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
-                                        placeholder="Auto-fetched"
+                                        className="w-32 border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
+                                        placeholder="Auto"
                                         readOnly={useCalculatedPrice}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => fetchLiveMetalPrice(productInfo.goldType, productInfo.goldPurityKarat)}
                                         disabled={!productInfo.goldType || !productInfo.goldPurityKarat || fetchingPrice}
-                                        className="px-5 py-3 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-bold transition flex items-center justify-center min-w-[60px] shrink-0 z-10"
+                                        className="px-4 py-3 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-bold transition flex items-center justify-center w-12 h-12 shrink-0"
                                         title="Refresh live gold rate"
                                     >
                                         {fetchingPrice ? (
-                                            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
                                         ) : (
-                                            <span className="text-xl">🔄</span>
+                                            <span className="text-lg">🔄</span>
                                         )}
                                     </button>
                                 </div>
                                 {liveMetalPrices && (
                                     <p className="text-xs text-green-600 mt-2 font-semibold">✓ Live rate: AED {liveMetalPrices.pricePerGram}/g ({liveMetalPrices.karat}K) - Updated: {new Date(liveMetalPrices.timestamp * 1000).toLocaleTimeString()}</p>
                                 )}
+                            </div>
+                            <div className="relative isolate">
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Stone Type (Optional)</label>
+                                <select 
+                                    name="stoneType" 
+                                    value={productInfo.stoneType} 
+                                    onChange={onChangeHandler} 
+                                    className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"
+                                >
+                                    <option value="">Select Stone Type</option>
+                                    <option value="Diamond">Diamond</option>
+                                    <option value="Ruby">Ruby</option>
+                                    <option value="Emerald">Emerald</option>
+                                    <option value="Sapphire">Sapphire</option>
+                                    <option value="Pearl">Pearl</option>
+                                    <option value="Topaz">Topaz</option>
+                                    <option value="Amethyst">Amethyst</option>
+                                    <option value="Aquamarine">Aquamarine</option>
+                                    <option value="Garnet">Garnet</option>
+                                    <option value="Opal">Opal</option>
+                                    <option value="Turquoise">Turquoise</option>
+                                    <option value="Peridot">Peridot</option>
+                                    <option value="Citrine">Citrine</option>
+                                    <option value="Tanzanite">Tanzanite</option>
+                                    <option value="Jade">Jade</option>
+                                    <option value="Cubic Zirconia">Cubic Zirconia</option>
+                                    <option value="Moissanite">Moissanite</option>
+                                    <option value="Lab-Grown Diamond">Lab-Grown Diamond</option>
+                                    <option value="Mixed Stones">Mixed Stones</option>
+                                    <option value="Other">Other</option>
+                                </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Stone Weight (carats)</label>
@@ -831,16 +889,55 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Stone Price (AED)</label>
-                                <input 
-                                    type="number" 
-                                    step="0.01" 
-                                    name="stonePrice" 
-                                    value={productInfo.stonePrice} 
-                                    onChange={onChangeHandler} 
-                                    className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
-                                    placeholder="0.00"
-                                />
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Stone Price</label>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="inline-flex border rounded-lg overflow-hidden">
+                                        {['total','per-carat'].map(m => (
+                                            <button
+                                                key={m}
+                                                type="button"
+                                                onClick={() => setStonePriceMode(m)}
+                                                className={`px-3 py-1.5 text-xs ${stonePriceMode===m? 'bg-yellow-500 text-white' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+                                                aria-pressed={stonePriceMode===m}
+                                            >
+                                                {m === 'total' ? 'Total (AED)' : 'Per Carat (AED)'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {stonePriceMode === 'per-carat' && (
+                                        <span className="text-xs text-slate-500">Total = per carat × carats</span>
+                                    )}
+                                </div>
+                                {stonePriceMode === 'total' ? (
+                                    <input 
+                                        type="number" 
+                                        step="0.01" 
+                                        name="stonePrice" 
+                                        value={productInfo.stonePrice} 
+                                        onChange={onChangeHandler} 
+                                        className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
+                                        placeholder="0.00"
+                                    />
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                        <div className="sm:col-span-2">
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={stonePricePerCarat}
+                                                onChange={(e) => setStonePricePerCarat(e.target.value)}
+                                                className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"
+                                                placeholder="Price per carat (AED)"
+                                            />
+                                        </div>
+                                        <div>
+                                            <div className="h-[46px] flex items-center justify-between px-3 border-2 border-slate-200 rounded-lg bg-slate-50 text-sm">
+                                                <span className="text-slate-500">Computed</span>
+                                                <span className="font-semibold">AED {Number(productInfo.stoneWeight||0) > 0 && Number(stonePricePerCarat||0) > 0 ? (Number(productInfo.stoneWeight)*Number(stonePricePerCarat)).toFixed(2) : '0.00'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Making Charges (%)</label>

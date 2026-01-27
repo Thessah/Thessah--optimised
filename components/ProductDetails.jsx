@@ -819,6 +819,7 @@ const ProductDetails = ({ product, reviews = [] }) => {
               const stoneWeight = Number(product.stoneWeight) || 0;
               const stonePrice = Number(product.stonePrice) || 0;
               const makingCharges = Number(product.makingCharges) || 0;
+              const goldKarat = Number(product.attributes?.goldPurityKarat) || 22;
               
               const hasPriceData = goldWeight > 0 || stoneWeight > 0 || stonePrice > 0 || makingCharges > 0 || Number(product.price) > 0;
               const goldValue = goldWeight * goldRate;
@@ -864,10 +865,10 @@ const ProductDetails = ({ product, reviews = [] }) => {
                             <span className="text-2xl">🪙</span>
                             <div>
                               <div className="font-semibold text-gray-900">{goldTypeDisplay}</div>
-                              <div className="text-xs text-gray-500">14KT</div>
+                              <div className="text-xs text-gray-500">{goldKarat}KT</div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-center text-gray-700">AED {formatMoney(goldRate)}/g</td>
+                          <td className="px-6 py-4 text-center text-gray-700">AED {formatMoney(goldRate)}/g ({goldKarat}K)</td>
                           <td className="px-6 py-4 text-center text-gray-700">{goldWeight.toFixed(3)}g</td>
                           <td className="px-6 py-4 text-center text-gray-700">-</td>
                           <td className="px-6 py-4 text-right font-semibold text-gray-900">₹ {formatMoney(goldValue.toFixed(2))}</td>
@@ -880,6 +881,14 @@ const ProductDetails = ({ product, reviews = [] }) => {
                             <span className="text-2xl">💎</span>
                             <div>
                               <div className="font-semibold text-gray-900">Stone</div>
+                              {(() => {
+                                const perCaratAttr = product.attributes?.stonePricePerCarat
+                                const derived = stonePrice > 0 && stoneWeight > 0 ? (stonePrice/stoneWeight) : null
+                                const show = perCaratAttr || derived
+                                return show ? (
+                                  <div className="text-[11px] text-gray-500">Per carat: AED {formatMoney((show).toFixed(2))}</div>
+                                ) : null
+                              })()}
                             </div>
                           </td>
                           <td className="px-6 py-4 text-center text-gray-700">-</td>
