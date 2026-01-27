@@ -44,6 +44,14 @@ export default function RootLayout({ children }) {
             <link rel="preconnect" href={ikOrigin} crossOrigin="anonymous" />
           </>
         )}
+        {/* Preload APIs to kick off fetch sooner */}
+        <link rel="preload" href="/api/store/hero-banners" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/api/categories" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/api/store/settings" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/api/store/collections" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/api/store/home-sections" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/api/store/grid-products" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/api/store/section4" as="fetch" crossOrigin="anonymous" />
       </head>
       <body className={`${outfit.className} antialiased`} suppressHydrationWarning>
         {/* Google Tag Manager (noscript must be immediately after <body>) */}

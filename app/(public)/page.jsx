@@ -2,7 +2,12 @@
 import { useSelector } from "react-redux";
 import { useMemo, useEffect, useState, lazy, Suspense } from "react";
 import dynamic from "next/dynamic";
-import axios from "axios";
+
+// Cache constants
+const SECTIONS_CACHE_KEY = 'home:sections:v1'
+const GRID_CACHE_KEY = 'home:grid:v1'
+const SECTION4_CACHE_KEY = 'home:section4:v1'
+const TTL_MS = 10 * 60 * 1000 // 10 minutes
 
 // Critical above-the-fold components - load immediately
 import Hero from "@/components/Hero";
@@ -30,26 +35,75 @@ export default function Home() {
     const [section4Data, setSection4Data] = useState([]);
 
     useEffect(() => {
-        // Parallel fetch for faster loading
+        // 1) Seed from cache immediately if fresh
+        try {
+            const rawSections = sessionStorage.getItem(SECTIONS_CACHE_KEY)
+            if (rawSections) {
+                const cached = JSON.parse(rawSections)
+                if (cached?.data && Array.isArray(cached.data) && (Date.now() - cached.ts < TTL_MS)) {
+                    setAdminSections(cached.data)
+                }
+            }
+            const rawGrid = sessionStorage.getItem(GRID_CACHE_KEY)
+            if (rawGrid) {
+                const cached = JSON.parse(rawGrid)
+                if (cached?.data && Array.isArray(cached.data) && (Date.now() - cached.ts < TTL_MS)) {
+                    setGridSections(cached.data)
+                }
+            }
+            const rawSection4 = sessionStorage.getItem(SECTION4_CACHE_KEY)
+            if (rawSection4) {
+                const cached = JSON.parse(rawSection4)
+                if (cached?.data && Array.isArray(cached.data) && (Date.now() - cached.ts < TTL_MS)) {
+                    setSection4Data(cached.data)
+                }
+            }
+        } catch {}
+
+        // 2) Revalidate in parallel with timeout
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), 6000)
+
         const fetchData = async () => {
             try {
                 const [sectionsRes, gridRes, section4Res] = await Promise.all([
-                    axios.get('/api/store/home-sections').catch(() => ({ data: { sections: [] } })),
-                    axios.get('/api/store/grid-products').catch(() => ({ data: { sections: [] } })),
-                    axios.get('/api/store/section4').catch(() => ({ data: { sections: [] } }))
-                ]);
-                setAdminSections(sectionsRes.data.sections || []);
-                setGridSections(Array.isArray(gridRes.data.sections) ? gridRes.data.sections : []);
-                setSection4Data(section4Res.data.sections || []);
+                    fetch('/api/store/home-sections', { cache: 'no-store', signal: controller.signal }),
+                    fetch('/api/store/grid-products', { cache: 'no-store', signal: controller.signal }),
+                    fetch('/api/store/section4', { cache: 'no-store', signal: controller.signal })
+                ])
+
+                if (sectionsRes.ok) {
+                    const data = await sectionsRes.json()
+                    const sections = data?.sections || []
+                    setAdminSections(sections)
+                    try { sessionStorage.setItem(SECTIONS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: sections })) } catch {}
+                }
+                if (gridRes.ok) {
+                    const data = await gridRes.json()
+                    const sections = Array.isArray(data?.sections) ? data.sections : []
+                    setGridSections(sections)
+                    try { sessionStorage.setItem(GRID_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: sections })) } catch {}
+                }
+                if (section4Res.ok) {
+                    const data = await section4Res.json()
+                    const sections = data?.sections || []
+                    setSection4Data(sections)
+                    try { sessionStorage.setItem(SECTION4_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: sections })) } catch {}
+                }
+
+                clearTimeout(timer)
             } catch (error) {
-                console.error('Error fetching data:', error);
-                setAdminSections([]);
-                setGridSections([]);
-                setSection4Data([]);
+                if (error?.name !== 'AbortError') console.error('Error fetching data:', error)
+                clearTimeout(timer)
             }
-        };
-        fetchData();
-    }, []);
+        }
+        fetchData()
+
+        return () => {
+            controller.abort()
+            clearTimeout(timer)
+        }
+    }, [])
 
     const curatedSections = useMemo(() => {
         return adminSections.map(section => {

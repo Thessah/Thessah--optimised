@@ -4,11 +4,32 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import axios from 'axios'
 
-export default function Hero() {
-  const [slides, setSlides] = useState([])
-  const [loading, setLoading] = useState(true)
+// Lightweight client-side cache to speed up first paint
+const CACHE_KEY = 'hero-banners:v1'
+const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+
+function mapBannersToSlides(banners) {
+  const active = Array.isArray(banners) ? banners.filter(b => b && b.isActive !== false) : []
+  return active.map(banner => ({
+    image: banner.image || '',
+    mobileImage: banner.mobileImage || banner.image || '',
+    badge: banner.badge || '',
+    subtitle: banner.subtitle || '',
+    title: banner.title || '',
+    description: banner.description || '',
+    cta: banner.cta || '',
+    link: banner.link || '/shop',
+    showTitle: banner.showTitle !== undefined ? banner.showTitle : true,
+    showSubtitle: banner.showSubtitle !== undefined ? banner.showSubtitle : true,
+    showBadge: banner.showBadge !== undefined ? banner.showBadge : true,
+    showButton: banner.showButton !== undefined ? banner.showButton : true
+  }))
+}
+
+export default function Hero({ initialSlides = [] }) {
+  const [slides, setSlides] = useState(initialSlides || [])
+  const [loading, setLoading] = useState(!(initialSlides && initialSlides.length > 0))
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -17,48 +38,57 @@ export default function Hero() {
   const [prevTranslate, setPrevTranslate] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(true)
 
-  // Fetch banners from store API with optimized loading
+  // Fetch banners with sessionStorage SWR-style cache and timeout
   useEffect(() => {
-    const fetchBanners = async () => {
-      try {
-        const res = await axios.get('/api/store/hero-banners')
+    let aborted = false
+    // 1) Serve from cache instantly if fresh
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY)
+      if (raw) {
+        const cached = JSON.parse(raw)
+        if (cached && Array.isArray(cached.slides) && cached.slides.length > 0 && (Date.now() - cached.ts < CACHE_TTL_MS)) {
+          setSlides(cached.slides)
+          setLoading(false)
+        }
+      }
+    } catch {}
 
-        if (res.data?.banners?.length > 0) {
-          // Filter only active banners
-          const activeBanners = res.data.banners.filter(b => b.isActive !== false)
-          
-          if (activeBanners.length > 0) {
-            // Convert database banners to slides format
-            const dbSlides = activeBanners.map(banner => ({
-              image: banner.image || '',
-              mobileImage: banner.mobileImage || banner.image || '',
-              badge: banner.badge || '',
-              subtitle: banner.subtitle || '',
-              title: banner.title || '',
-              description: banner.description || '',
-              cta: banner.cta || '',
-              link: banner.link || '/shop',
-              showTitle: banner.showTitle !== undefined ? banner.showTitle : true,
-              showSubtitle: banner.showSubtitle !== undefined ? banner.showSubtitle : true,
-              showBadge: banner.showBadge !== undefined ? banner.showBadge : true,
-              showButton: banner.showButton !== undefined ? banner.showButton : true
-            }))
-            
+    // 2) Revalidate in background
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 6000) // 6s safety timeout
+    ;(async () => {
+      try {
+        const res = await fetch('/api/store/hero-banners', { cache: 'no-store', signal: controller.signal })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
+        const dbSlides = mapBannersToSlides(data?.banners || [])
+        if (!aborted) {
+          if (dbSlides.length > 0) {
             setSlides(dbSlides)
             setLoading(false)
-            return
+            try {
+              sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), slides: dbSlides }))
+            } catch {}
+          } else if (slides.length === 0) {
+            setSlides([])
+            setLoading(false)
           }
         }
-        setSlides([])
-        setLoading(false)
-
       } catch (error) {
-        console.error('Error fetching banners:', error.message)
-        setSlides([])
-        setLoading(false)
+        if (!aborted) {
+          console.error('Error fetching banners:', error?.message || error)
+          if (slides.length === 0) setLoading(false)
+        }
+      } finally {
+        clearTimeout(timer)
       }
+    })()
+
+    return () => {
+      aborted = true
+      controller.abort()
+      clearTimeout(timer)
     }
-    fetchBanners()
   }, [])
 
   // Handle infinite loop reset

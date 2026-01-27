@@ -94,33 +94,68 @@ const Navbar = () => {
 
   // (already declared above)
 
-  // Fetch categories and navigation menu from API
+  // Perf: cache categories + menu in sessionStorage and revalidate in background
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch categories
-        const catRes = await fetch('/api/categories');
-        const catData = await catRes.json();
-        if (catData.categories) {
-          setCategories(catData.categories);
-        }
+    const CAT_KEY = 'nav:categories:v1'
+    const MENU_KEY = 'nav:menu:v1'
+    const TTL = 10 * 60 * 1000 // 10 minutes
 
-        // Fetch navigation menu
-        const settingsRes = await fetch('/api/store/settings');
-        const settingsData = await settingsRes.json();
-        if (settingsData.settings?.navMenuItems) {
-          setNavMenuItems(settingsData.settings.navMenuItems);
+    // 1) Seed from cache immediately
+    try {
+      const rawCats = sessionStorage.getItem(CAT_KEY)
+      if (rawCats) {
+        const cached = JSON.parse(rawCats)
+        if (cached && Array.isArray(cached.data) && (Date.now() - cached.ts < TTL)) {
+          setCategories(cached.data)
         }
-      } catch (error) {
-        console.error('Error fetching data:', error);
       }
-    };
-    fetchData();
-    
-    // Poll for updates every 30 seconds
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
-  }, []);
+      const rawMenu = sessionStorage.getItem(MENU_KEY)
+      if (rawMenu) {
+        const cached = JSON.parse(rawMenu)
+        if (cached && Array.isArray(cached.data) && (Date.now() - cached.ts < TTL)) {
+          setNavMenuItems(cached.data)
+        }
+      }
+    } catch {}
+
+    // 2) Revalidate both endpoints in parallel with timeout
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 6000)
+
+    const revalidate = async () => {
+      try {
+        const [catRes, settingsRes] = await Promise.all([
+          fetch('/api/categories', { cache: 'no-store', signal: controller.signal }),
+          fetch('/api/store/settings', { cache: 'no-store', signal: controller.signal })
+        ])
+        if (catRes.ok) {
+          const catData = await catRes.json()
+          if (Array.isArray(catData?.categories)) {
+            setCategories(catData.categories)
+            try { sessionStorage.setItem(CAT_KEY, JSON.stringify({ ts: Date.now(), data: catData.categories })) } catch {}
+          }
+        }
+        if (settingsRes.ok) {
+          const settingsData = await settingsRes.json()
+          const items = settingsData?.settings?.navMenuItems
+          if (Array.isArray(items)) {
+            setNavMenuItems(items)
+            try { sessionStorage.setItem(MENU_KEY, JSON.stringify({ ts: Date.now(), data: items })) } catch {}
+          }
+        }
+      } catch (err) {
+        if (err?.name !== 'AbortError') console.error('Navbar fetch error:', err)
+      } finally {
+        clearTimeout(timer)
+      }
+    }
+
+    revalidate()
+
+    // Optional gentle refresh every 10 minutes
+    const interval = setInterval(revalidate, TTL)
+    return () => { clearInterval(interval); controller.abort(); clearTimeout(timer) }
+  }, [])
 
   // Product names for animated placeholder
   const productNames = [

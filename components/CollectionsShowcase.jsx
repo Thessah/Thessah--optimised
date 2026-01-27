@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import axios from 'axios'
+
+const COLLECTIONS_CACHE_KEY = 'collections:data:v1'
+const SETTINGS_CACHE_KEY = 'collections:heading:v1'
+const TTL_MS = 10 * 60 * 1000 // 10 minutes
 
 export default function CollectionsShowcase() {
   const [collections, setCollections] = useState([])
@@ -14,33 +17,61 @@ export default function CollectionsShowcase() {
 
   const fetchData = async () => {
     try {
-      // Fetch collections
-      const collectionsRes = await axios.get('/api/store/collections')
-      if (collectionsRes.data.collections && collectionsRes.data.collections.length > 0) {
-        const activeCollections = collectionsRes.data.collections.filter(c => c.isActive !== false)
-        setCollections(activeCollections)
-      }
-      
-      // Fetch settings
-      const settingsRes = await axios.get('/api/store/settings')
-      if (settingsRes.data.settings) {
-        const { collectionsHeading } = settingsRes.data.settings
-        if (collectionsHeading) {
-          setHeading(collectionsHeading)
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 6000)
+
+      const [collectionsRes, settingsRes] = await Promise.all([
+        fetch('/api/store/collections', { cache: 'no-store', signal: controller.signal }),
+        fetch('/api/store/settings', { cache: 'no-store', signal: controller.signal })
+      ])
+
+      if (collectionsRes.ok) {
+        const data = await collectionsRes.json()
+        if (Array.isArray(data?.collections) && data.collections.length > 0) {
+          const activeCollections = data.collections.filter(c => c && c.isActive !== false)
+          setCollections(activeCollections)
+          try { sessionStorage.setItem(COLLECTIONS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: activeCollections })) } catch {}
         }
       }
+
+      if (settingsRes.ok) {
+        const data = await settingsRes.json()
+        if (data?.settings?.collectionsHeading) {
+          setHeading(data.settings.collectionsHeading)
+          try { sessionStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: data.settings.collectionsHeading })) } catch {}
+        }
+      }
+
+      clearTimeout(timer)
     } catch (error) {
       console.error('Error fetching collections:', error)
     }
   }
 
-  // Fetch on mount and every 5 seconds
+  // Fetch on mount with cache-first and gentle revalidate
   useEffect(() => {
-    fetchData()
-  }, [])
+    // Serve cached data immediately if fresh
+    try {
+      const rawCollections = sessionStorage.getItem(COLLECTIONS_CACHE_KEY)
+      if (rawCollections) {
+        const cached = JSON.parse(rawCollections)
+        if (cached && Array.isArray(cached.data) && (Date.now() - cached.ts < TTL_MS)) {
+          setCollections(cached.data)
+        }
+      }
+      const rawHeading = sessionStorage.getItem(SETTINGS_CACHE_KEY)
+      if (rawHeading) {
+        const cached = JSON.parse(rawHeading)
+        if (cached?.data && (Date.now() - cached.ts < TTL_MS)) {
+          setHeading(cached.data)
+        }
+      }
+    } catch {}
 
-  useEffect(() => {
-    const interval = setInterval(fetchData, 5000)
+    fetchData()
+
+    // Gentle refresh every 10 minutes
+    const interval = setInterval(fetchData, TTL_MS)
     return () => clearInterval(interval)
   }, [])
 
