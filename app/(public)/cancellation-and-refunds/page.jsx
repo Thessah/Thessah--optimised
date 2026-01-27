@@ -19,7 +19,7 @@ export default function CancellationAndRefunds() {
       <div className="w-full text-center my-12">
         <h1 className="text-4xl md:text-5xl font-serif font-semibold mb-2 text-gray-800">Sunlit Symphony Gold Necklace Set</h1>
         <div className="text-3xl font-bold mb-1 text-gray-900">₹8 20 135</div>
-        <div className="text-xs text-gray-500 mb-2">Incl. taxes and charges</div>
+        <div className="text-xs text-gray-500 mb-2">Incl. Vat and charges</div>
         <div className="text-sm text-[#a55a4a] mt-2">*Price is indicative. Price will vary based on grammage of actual product and prevailing rate.</div>
         {/* Actions will be added in next step */}
       </div>

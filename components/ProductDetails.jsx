@@ -110,6 +110,8 @@ const ProductDetails = ({ product, reviews = [] }) => {
     general: true,
     description: true,
   });
+  const [calculatedPrice, setCalculatedPrice] = useState(null);
+  const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -169,21 +171,47 @@ const ProductDetails = ({ product, reviews = [] }) => {
     })();
   }, [isSignedIn, product._id]);
 
-  // Fetch live gold rate if product has gold
+  // Fetch live gold rate if product has gold and auto-calculate price
   useEffect(() => {
-    if (product.goldType && !product.goldRate) {
-      (async () => {
-        try {
-          const { data } = await axios.get('/api/gold-rate');
-          if (data?.rate) {
-            setLiveGoldRate(data.rate);
+    (async () => {
+      try {
+        setIsCalculatingPrice(true);
+        const { data } = await axios.get('/api/gold-rate');
+        
+        // API returns rates object with perGram24K, perGram22K, perGram18K
+        if (data?.rates) {
+          // Default to 22K gold rate, or use 24K/18K based on product
+          const goldKarat = product.attributes?.goldPurityKarat || 22;
+          let rateToUse = data.rates.perGram22K; // default
+          
+          if (goldKarat == 24) rateToUse = data.rates.perGram24K;
+          else if (goldKarat == 18) rateToUse = data.rates.perGram18K;
+          else if (goldKarat == 22) rateToUse = data.rates.perGram22K;
+          
+          setLiveGoldRate(rateToUse);
+          
+          // Auto-calculate approximate price
+          const goldWeight = Number(product.goldWeight) || 0;
+          const goldRate = Number(product.goldRate) || rateToUse || 0;
+          const stonePrice = Number(product.stonePrice) || 0;
+          const makingCharges = Number(product.makingCharges) || 0;
+          
+          if (goldWeight > 0 && goldRate > 0) {
+            const goldValue = goldWeight * goldRate;
+            const subTotal = goldValue + stonePrice;
+            const makingTotal = subTotal + makingCharges;
+            const vat = makingTotal * 0.05; // 5% VAT
+            const total = makingTotal + vat;
+            setCalculatedPrice(total);
           }
-        } catch (err) {
-          console.error('Failed to fetch gold rate:', err);
         }
-      })();
-    }
-  }, [product.goldType, product.goldRate]);
+      } catch (err) {
+        console.error('Failed to fetch gold rate:', err);
+      } finally {
+        setIsCalculatingPrice(false);
+      }
+    })();
+  }, [product.goldType, product.goldWeight, product.goldRate, product.stonePrice, product.makingCharges, product.attributes?.goldPurityKarat]);
 
   // Share menu outside click
   useEffect(() => {
@@ -338,11 +366,17 @@ const ProductDetails = ({ product, reviews = [] }) => {
           <h1 className="text-3xl md:text-4xl font-serif font-semibold text-gray-900">{product.name}</h1>
           <div className="flex items-center justify-center gap-3 text-gray-900">
             <span className="text-3xl md:text-4xl font-bold">{currency === 'AED' ? 'AED' : currency}</span>
-            <span className="text-3xl md:text-4xl font-bold">{formatMoney(effPrice || effAED || 0)}</span>
+            <span className="text-3xl md:text-4xl font-bold">{formatMoney(effPrice || effAED || calculatedPrice || 0)}</span>
             {effAED && effAED > effPrice && (
               <span className="text-lg text-gray-500 line-through">{formatMoney(effAED)}</span>
             )}
           </div>
+          {calculatedPrice && !effPrice && (
+            <div className="text-sm text-orange-600 font-semibold animate-pulse">✨ Auto-calculated from live gold rate</div>
+          )}
+          {isCalculatingPrice && (
+            <div className="text-sm text-gray-500 italic">📊 Calculating price...</div>
+          )}
           <div className="text-sm text-gray-500">Incl. taxes and charges</div>
           <div className="flex items-center justify-center gap-4 text-sm text-orange-700">
             <button type="button" className="flex items-center gap-1 hover:text-orange-800">
@@ -702,30 +736,50 @@ const ProductDetails = ({ product, reviews = [] }) => {
                     />
                   </div>
                 </div>
-                {((product.fastDelivery && product.showBuyButton !== false) || (product.enableEnquiry && product.showEnquiryButton !== false)) && (
-                  <div className="w-full flex flex-col gap-3">
-                    {product.fastDelivery && product.showBuyButton !== false && (
-                      <button
-                        type="button"
-                        onClick={handleOrderNow}
-                        className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-orange-600 text-white px-6 py-3 text-sm font-semibold shadow-md hover:bg-orange-700 transition"
-                      >
-                        <ShoppingCartIcon size={16} className="text-white" strokeWidth={2} />
-                        <span>Buy Now</span>
-                      </button>
-                    )}
-                    {product.enableEnquiry && product.showEnquiryButton !== false && (
-                      <button
-                        type="button"
-                        onClick={() => setShowEnquiryModal(true)}
-                        className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-orange-600 text-orange-700 px-6 py-3 text-sm font-semibold shadow-sm hover:bg-orange-50 transition"
-                      >
-                        <StarIcon size={16} className="text-orange-700" strokeWidth={2} />
-                        <span>Enquiry</span>
-                      </button>
-                    )}
+                <div className="w-full flex flex-col gap-3">
+                  {/* Quantity Selector */}
+                  <div className="flex items-center justify-center gap-3 bg-gray-50 rounded-lg p-2">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition"
+                    >
+                      <MinusIcon size={16} className="text-gray-600" />
+                    </button>
+                    <span className="text-lg font-semibold text-gray-900 min-w-[40px] text-center">{quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition"
+                    >
+                      <PlusIcon size={16} className="text-gray-600" />
+                    </button>
                   </div>
-                )}
+
+                  {/* Buy Now Button - Always visible unless explicitly disabled */}
+                  {product.showBuyButton !== false && (
+                    <button
+                      type="button"
+                      onClick={handleOrderNow}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-orange-600 text-white px-6 py-3 text-sm font-semibold shadow-md hover:bg-orange-700 transition"
+                    >
+                      <ShoppingCartIcon size={16} className="text-white" strokeWidth={2} />
+                      <span>Buy Now</span>
+                    </button>
+                  )}
+
+                  {/* Enquiry Button */}
+                  {product.enableEnquiry && product.showEnquiryButton !== false && (
+                    <button
+                      type="button"
+                      onClick={() => setShowEnquiryModal(true)}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-orange-600 text-orange-700 px-6 py-3 text-sm font-semibold shadow-sm hover:bg-orange-50 transition"
+                    >
+                      <StarIcon size={16} className="text-orange-700" strokeWidth={2} />
+                      <span>Enquiry</span>
+                    </button>
+                  )}
+                </div>
                 <div className="w-full text-center text-[#B8860B] text-xs py-3 border-t border-gray-200 mt-2">
                   <span className="inline-flex items-center gap-1">
                     <span>🪙</span>

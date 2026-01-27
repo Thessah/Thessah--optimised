@@ -99,11 +99,14 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
         badges: [], // Array of badge labels like "Price Lower Than Usual", "Hot Deal", etc.
         tags: [],
         goldType: '',
+        goldPurityKarat: '22',
         goldWeight: '',
         goldRate: '',
         stoneWeight: '',
         stonePrice: '',
-        makingCharges: ''
+        makingCharges: '',
+        makingChargePercent: '',
+        vatPercent: '5'
     })
     // Variants state
     const [hasVariants, setHasVariants] = useState(false)
@@ -117,10 +120,87 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
     ])
     const [reviewInput, setReviewInput] = useState({ name: "", rating: 5, comment: "", image: null })
     const [loading, setLoading] = useState(false)
+    const [useCalculatedPrice, setUseCalculatedPrice] = useState(false)
+    const [liveMetalPrices, setLiveMetalPrices] = useState(null)
+    const [fetchingPrice, setFetchingPrice] = useState(false)
 
     // Dynamic details (Metal / General)
     const [metalDetails, setMetalDetails] = useState([]) // [{label, value}]
     const [generalDetails, setGeneralDetails] = useState([]) // [{label, value}]
+
+    // Fetch live metal prices
+    const fetchLiveMetalPrice = async (metalType, karat) => {
+        setFetchingPrice(true);
+        try {
+            const response = await fetch('/api/gold-rate');
+            const data = await response.json();
+            console.log('Gold Rate API Response:', data);
+            
+            if (data?.rates) {
+                const karatValue = karat || productInfo.goldPurityKarat || '22';
+                let rateToUse = data.rates.perGram22K; // default
+                
+                if (karatValue == '24') rateToUse = data.rates.perGram24K;
+                else if (karatValue == '18') rateToUse = data.rates.perGram18K;
+                else if (karatValue == '22') rateToUse = data.rates.perGram22K;
+                
+                console.log(`Selected rate for ${karatValue}K:`, rateToUse);
+                
+                setLiveMetalPrices({
+                    pricePerGram: rateToUse,
+                    timestamp: Date.now() / 1000,
+                    karat: karatValue
+                });
+                // Auto-fill gold rate
+                setProductInfo(p => ({ ...p, goldRate: rateToUse }));
+            }
+        } catch (error) {
+            console.error('Failed to fetch metal price:', error);
+        } finally {
+            setFetchingPrice(false);
+        }
+    };
+
+    // Auto-fetch live price when gold type or karat changes
+    useEffect(() => {
+        if (productInfo.goldType && useCalculatedPrice) {
+            fetchLiveMetalPrice(productInfo.goldType, productInfo.goldPurityKarat);
+        }
+    }, [productInfo.goldType, productInfo.goldPurityKarat, useCalculatedPrice]);
+
+    // Initial fetch on mount if auto-calculate is enabled
+    useEffect(() => {
+        if (useCalculatedPrice && productInfo.goldType) {
+            fetchLiveMetalPrice(productInfo.goldType);
+        }
+    }, []);
+
+    // Auto-calculate price from gold/stone details
+    useEffect(() => {
+        if (useCalculatedPrice) {
+            const goldWeight = Number(productInfo.goldWeight) || 0;
+            const goldRate = Number(productInfo.goldRate) || 0;
+            const stonePrice = Number(productInfo.stonePrice) || 0;
+            const makingPercent = Number(productInfo.makingChargePercent) || 0;
+            const vatPercent = Number(productInfo.vatPercent) || 0;
+            
+            const goldValue = goldWeight * goldRate;
+            const subtotal = goldValue + stonePrice;
+            const makingCharges = (subtotal * makingPercent) / 100;
+            const subtotalWithMaking = subtotal + makingCharges;
+            const vat = (subtotalWithMaking * vatPercent) / 100;
+            const calculatedPrice = subtotalWithMaking + vat;
+            
+            if (calculatedPrice > 0) {
+                setProductInfo(p => ({ 
+                    ...p, 
+                    makingCharges: makingCharges.toFixed(2),
+                    price: calculatedPrice.toFixed(2), 
+                    AED: calculatedPrice.toFixed(2) 
+                }));
+            }
+        }
+    }, [useCalculatedPrice, productInfo.goldWeight, productInfo.goldRate, productInfo.stonePrice, productInfo.makingChargePercent, productInfo.vatPercent]);
 
 
     const { user, loading: authLoading, getToken } = useAuth();
@@ -212,6 +292,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                 fastDelivery: product.fastDelivery || false,
                 allowReturn: product.allowReturn !== undefined ? product.allowReturn : true,
                 allowReplacement: product.allowReplacement !== undefined ? product.allowReplacement : true,
+                enquiryOnly: product.enquiryOnly || false,
                 showBuyButton: product.showBuyButton !== undefined ? product.showBuyButton : true,
                 showEnquiryButton: product.showEnquiryButton !== undefined ? product.showEnquiryButton : true,
                 reviews: product.reviews || [],
@@ -593,6 +674,16 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                             <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">2</span>
                             Pricing
                         </h2>
+                        <div className="mb-6">
+                            <label className="flex items-center gap-3 p-4 border-2 border-green-200 rounded-lg hover:border-green-500 cursor-pointer transition bg-green-50">
+                                <input type="checkbox" checked={useCalculatedPrice} onChange={(e)=> setUseCalculatedPrice(e.target.checked)} className="w-5 h-5" />
+                                <div>
+                                    <span className="font-semibold text-slate-900">🧮 Auto-Calculate Price from Gold Details</span>
+                                    <p className="text-xs text-slate-600 mt-1">Price will be calculated automatically based on gold weight, rate, stone price & making charges</p>
+                                </div>
+                            </label>
+                        </div>
+                        {!useCalculatedPrice && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Regular Price (AED) *</label>
@@ -609,6 +700,40 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                 </div>
                             </div>
                         </div>
+                        )}
+                        {useCalculatedPrice && (
+                            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
+                                <h3 className="font-bold text-green-900 mb-3 text-lg">💰 Calculated Price</h3>
+                                <div className="space-y-2 text-sm text-slate-700">
+                                    <div className="flex justify-between">
+                                        <span>Gold Value ({productInfo.goldWeight}g × AED {productInfo.goldRate}/g):</span>
+                                        <span className="font-semibold">AED {((Number(productInfo.goldWeight) || 0) * (Number(productInfo.goldRate) || 0)).toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Stone Price:</span>
+                                        <span className="font-semibold">AED {(Number(productInfo.stonePrice) || 0).toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-slate-600">
+                                        <span>Subtotal:</span>
+                                        <span>AED {(((Number(productInfo.goldWeight) || 0) * (Number(productInfo.goldRate) || 0)) + (Number(productInfo.stonePrice) || 0)).toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Making Charges ({productInfo.makingChargePercent}%):</span>
+                                        <span className="font-semibold">AED {productInfo.makingCharges || '0.00'}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>VAT ({productInfo.vatPercent}%):</span>
+                                        <span className="font-semibold">AED {((((Number(productInfo.goldWeight) || 0) * (Number(productInfo.goldRate) || 0)) + (Number(productInfo.stonePrice) || 0) + (Number(productInfo.makingCharges) || 0)) * (Number(productInfo.vatPercent) || 0) / 100).toFixed(2)}</span>
+                                    </div>
+                                    <hr className="border-green-300 my-3" />
+                                    <div className="flex justify-between text-lg font-bold text-green-900">
+                                        <span>Total Price:</span>
+                                        <span>AED {productInfo.price || '0.00'}</span>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-slate-600 mt-4 italic">✓ Price updates automatically • Live gold rate from API</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Section 2.5: Price Breakup (Gold, Stone, Making Charges) */}
@@ -635,6 +760,19 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                 </select>
                             </div>
                             <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Gold Purity (Karat)</label>
+                                <select 
+                                    name="goldPurityKarat" 
+                                    value={productInfo.goldPurityKarat} 
+                                    onChange={onChangeHandler} 
+                                    className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition"
+                                >
+                                    <option value="24">24K (99.9% Pure)</option>
+                                    <option value="22">22K (91.6% Pure)</option>
+                                    <option value="18">18K (75% Pure)</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Gold Weight (grams)</label>
                                 <input 
                                     type="number" 
@@ -647,16 +785,38 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Gold Rate (per gram)</label>
-                                <input 
-                                    type="number" 
-                                    step="0.01" 
-                                    name="goldRate" 
-                                    value={productInfo.goldRate} 
-                                    onChange={onChangeHandler} 
-                                    className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
-                                    placeholder="0.00"
-                                />
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Gold Rate (per gram) - Auto from API</label>
+                                <div className="flex gap-2 items-stretch">
+                                    <input 
+                                        type="number" 
+                                        step="0.01" 
+                                        name="goldRate" 
+                                        value={productInfo.goldRate} 
+                                        onChange={onChangeHandler} 
+                                        className="flex-1 border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
+                                        placeholder="Auto-fetched"
+                                        readOnly={useCalculatedPrice}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => fetchLiveMetalPrice(productInfo.goldType, productInfo.goldPurityKarat)}
+                                        disabled={!productInfo.goldType || !productInfo.goldPurityKarat || fetchingPrice}
+                                        className="px-5 py-3 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-bold transition flex items-center justify-center min-w-[60px]"
+                                        title="Refresh live gold rate"
+                                    >
+                                        {fetchingPrice ? (
+                                            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        ) : (
+                                            <span className="text-xl">🔄</span>
+                                        )}
+                                    </button>
+                                </div>
+                                {liveMetalPrices && (
+                                    <p className="text-xs text-green-600 mt-2 font-semibold">✓ Live rate: AED {liveMetalPrices.pricePerGram}/g ({liveMetalPrices.karat}K) - Updated: {new Date(liveMetalPrices.timestamp * 1000).toLocaleTimeString()}</p>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Stone Weight (carats)</label>
@@ -683,15 +843,30 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Making Charges (AED)</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Making Charges (%)</label>
                                 <input 
                                     type="number" 
-                                    step="0.01" 
-                                    name="makingCharges" 
-                                    value={productInfo.makingCharges} 
+                                    step="0.1" 
+                                    name="makingChargePercent" 
+                                    value={productInfo.makingChargePercent} 
                                     onChange={onChangeHandler} 
                                     className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
-                                    placeholder="0.00"
+                                    placeholder="e.g., 10"
+                                />
+                                {productInfo.makingCharges && (
+                                    <p className="text-xs text-slate-600 mt-1">= AED {productInfo.makingCharges}</p>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">VAT (%) - Default 5%</label>
+                                <input 
+                                    type="number" 
+                                    step="0.1" 
+                                    name="vatPercent" 
+                                    value={productInfo.vatPercent} 
+                                    onChange={onChangeHandler} 
+                                    className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition" 
+                                    placeholder="5"
                                 />
                             </div>
                         </div>
