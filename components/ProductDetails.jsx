@@ -380,8 +380,8 @@ const ProductDetails = ({ product, reviews = [] }) => {
           <div className="text-sm text-gray-500">Incl. taxes and charges</div>
           <div className="flex items-center justify-center gap-4 text-sm text-orange-700">
             <button type="button" className="flex items-center gap-1 hover:text-orange-800">
-              <span className="text-base">🧡</span>
-              <span>Try It On</span>
+              {/* <span className="text-base">🧡</span>
+              <span>Try It On</span> */}
             </button>
             <button type="button" className="flex items-center gap-1 hover:text-orange-800" onClick={handleWishlist} disabled={wishlistLoading}>
               <HeartIcon size={16} className={isInWishlist ? 'text-red-500' : 'text-orange-700'} strokeWidth={2} />
@@ -790,8 +790,10 @@ const ProductDetails = ({ product, reviews = [] }) => {
             </div>
         ) : (
           /* Price Breakup Tab */
-          <div className="w-full max-w-4xl">
-            <div className="mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left: selector + table (span 2) */}
+            <div className="lg:col-span-2">
+              <div className="mb-6">
               <label className="text-gray-700 font-semibold block mb-3">Select Gold Type</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {goldTypeOptions.map((type) => (
@@ -812,7 +814,7 @@ const ProductDetails = ({ product, reviews = [] }) => {
                   </button>
                 ))}
               </div>
-            </div>
+              </div>
             {(() => {
               const goldWeight = Number(product.goldWeight) || 0;
               const goldRate = Number(product.goldRate) || (liveGoldRate || 0);
@@ -942,6 +944,73 @@ const ProductDetails = ({ product, reviews = [] }) => {
                 </div>
               );
             })()}
+            </div>
+            {/* Right: product image + actions */}
+            <div className="lg:col-span-1 flex flex-col items-center gap-4">
+              <div className="w-full text-right text-xs text-gray-500">SKU ID : {product.sku || 'NA'}</div>
+              <div className="w-full flex justify-center">
+                <div className="bg-white rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center aspect-square w-full max-w-xs">
+                  <Image
+                    src={product.images?.[0] || 'https://ik.imagekit.io/jrstupuke/placeholder.png'}
+                    alt={product.name}
+                    width={350}
+                    height={350}
+                    className="object-cover w-full h-full"
+                    onError={(e) => { e.currentTarget.src = 'https://ik.imagekit.io/jrstupuke/placeholder.png'; }}
+                  />
+                </div>
+              </div>
+              <div className="w-full flex flex-col gap-3">
+                {/* Quantity Selector */}
+                <div className="flex items-center justify-center gap-3 bg-gray-50 rounded-lg p-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition"
+                  >
+                    <MinusIcon size={16} className="text-gray-600" />
+                  </button>
+                  <span className="text-lg font-semibold text-gray-900 min-w-[40px] text-center">{quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition"
+                  >
+                    <PlusIcon size={16} className="text-gray-600" />
+                  </button>
+                </div>
+
+                {/* Buy Now Button */}
+                {product.showBuyButton !== false && (
+                  <button
+                    type="button"
+                    onClick={handleOrderNow}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-orange-600 text-white px-6 py-3 text-sm font-semibold shadow-md hover:bg-orange-700 transition"
+                  >
+                    <ShoppingCartIcon size={16} className="text-white" strokeWidth={2} />
+                    <span>Buy Now</span>
+                  </button>
+                )}
+
+                {/* Enquiry Button */}
+                {product.enableEnquiry && product.showEnquiryButton !== false && (
+                  <button
+                    type="button"
+                    onClick={() => setShowEnquiryModal(true)}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-orange-600 text-orange-700 px-6 py-3 text-sm font-semibold shadow-sm hover:bg-orange-50 transition"
+                  >
+                    <StarIcon size={16} className="text-orange-700" strokeWidth={2} />
+                    <span>Enquiry</span>
+                  </button>
+                )}
+              </div>
+              <div className="w-full text-center text-[#B8860B] text-xs py-3 border-t border-gray-200 mt-2">
+                <span className="inline-flex items-center gap-1">
+                  <span>🪙</span>
+                  Free cleaning service!
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -1031,3 +1100,4 @@ const ProductDetails = ({ product, reviews = [] }) => {
 };
 
 export default ProductDetails;
+
