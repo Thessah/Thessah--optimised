@@ -784,7 +784,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                     placeholder="0.000"
                                 />
                             </div>
-                            <div>
+                            <div className="relative z-10">
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Gold Rate (per gram) - Auto from API</label>
                                 <div className="flex gap-2 items-stretch">
                                     <input 
@@ -801,7 +801,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                         type="button"
                                         onClick={() => fetchLiveMetalPrice(productInfo.goldType, productInfo.goldPurityKarat)}
                                         disabled={!productInfo.goldType || !productInfo.goldPurityKarat || fetchingPrice}
-                                        className="px-5 py-3 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-bold transition flex items-center justify-center min-w-[60px]"
+                                        className="px-5 py-3 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-bold transition flex items-center justify-center min-w-[60px] shrink-0 z-10"
                                         title="Refresh live gold rate"
                                     >
                                         {fetchingPrice ? (
