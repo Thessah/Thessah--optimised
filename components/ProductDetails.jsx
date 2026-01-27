@@ -583,7 +583,7 @@ const ProductDetails = ({ product, reviews = [] }) => {
       {/* Jewellery Details Section - Moved to end */}
       <div className="w-full bg-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-serif font-semibold mb-8 text-gray-900">Jewellery Details</h2>
+          <h2 className="text-2xl md:text-3xl font-serif font-semibold mb-8 text-gray-900 text-center">Jewellery Details</h2>
           
           {/* Tab Buttons */}
           <div className="flex justify-center mb-8">
