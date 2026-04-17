@@ -11,6 +11,12 @@ export default function MenuManagement() {
   const [initialLoading, setInitialLoading] = useState(true)
   
   const [navMenuItems, setNavMenuItems] = useState([])
+  const [navMenuEnabled, setNavMenuEnabled] = useState(true)
+  const [navActionsVisibility, setNavActionsVisibility] = useState({
+    store: true,
+    wishlist: true,
+    cart: true
+  })
   const [hasNavChanges, setHasNavChanges] = useState(false)
 
   const [footerSections, setFooterSections] = useState([])
@@ -46,6 +52,23 @@ export default function MenuManagement() {
       
       if (settingsRes.data.settings?.navMenuItems) {
         setNavMenuItems(settingsRes.data.settings.navMenuItems)
+      }
+
+      if (typeof settingsRes.data.settings?.navMenuEnabled === 'boolean') {
+        setNavMenuEnabled(settingsRes.data.settings.navMenuEnabled)
+      } else {
+        setNavMenuEnabled(true)
+      }
+
+      const actionsVisibility = settingsRes.data.settings?.navActionsVisibility
+      if (actionsVisibility && typeof actionsVisibility === 'object') {
+        setNavActionsVisibility({
+          store: actionsVisibility.store !== false,
+          wishlist: actionsVisibility.wishlist !== false,
+          cart: actionsVisibility.cart !== false
+        })
+      } else {
+        setNavActionsVisibility({ store: true, wishlist: true, cart: true })
       }
 
       if (settingsRes.data.settings?.footerSections) {
@@ -113,7 +136,9 @@ export default function MenuManagement() {
 
         // Persist immediately so icon appears on frontend without extra manual save step.
         const saveRes = await axios.put('/api/store/settings', {
-          navMenuItems: updated
+          navMenuItems: updated,
+          navMenuEnabled,
+          navActionsVisibility
         })
 
         if (saveRes.data?.settings?.navMenuItems) {
@@ -213,7 +238,9 @@ export default function MenuManagement() {
     setLoading(true)
     try {
       const response = await axios.put('/api/store/settings', {
-        navMenuItems: navMenuItems
+        navMenuItems: navMenuItems,
+        navMenuEnabled,
+        navActionsVisibility
       })
       toast.success('Navigation menu updated')
       setEditingNavIndex(null)
@@ -306,6 +333,74 @@ export default function MenuManagement() {
             <p className="text-sm text-gray-600">
               Manage the top navigation menu items (All Jewellery, Gold, Diamond, etc.)
             </p>
+          </div>
+
+          <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Enable Top Navigation Bar</p>
+                <p className="text-xs text-gray-600">Show or hide the desktop category bar on the storefront navbar.</p>
+              </div>
+              <label className="inline-flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={navMenuEnabled}
+                  onChange={(e) => {
+                    setNavMenuEnabled(e.target.checked)
+                    setHasNavChanges(true)
+                  }}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  {navMenuEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <p className="text-sm font-semibold text-gray-900 mb-1">Navbar Action Icons</p>
+            <p className="text-xs text-gray-600 mb-3">Enable or disable Store, Wishlist, and Cart icons on the top-right navbar.</p>
+            <div className="flex flex-wrap gap-5">
+              <label className="inline-flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={navActionsVisibility.store}
+                  onChange={(e) => {
+                    setNavActionsVisibility((prev) => ({ ...prev, store: e.target.checked }))
+                    setHasNavChanges(true)
+                  }}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm text-gray-700">Store</span>
+              </label>
+
+              <label className="inline-flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={navActionsVisibility.wishlist}
+                  onChange={(e) => {
+                    setNavActionsVisibility((prev) => ({ ...prev, wishlist: e.target.checked }))
+                    setHasNavChanges(true)
+                  }}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm text-gray-700">Wishlist</span>
+              </label>
+
+              <label className="inline-flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={navActionsVisibility.cart}
+                  onChange={(e) => {
+                    setNavActionsVisibility((prev) => ({ ...prev, cart: e.target.checked }))
+                    setHasNavChanges(true)
+                  }}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm text-gray-700">Cart</span>
+              </label>
+            </div>
           </div>
 
           <div className="flex justify-end mb-4">

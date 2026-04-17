@@ -60,6 +60,12 @@ let cachedSettings = {
     selectedCategoryNames: [],
     order: []
   },
+  navMenuEnabled: true,
+  navActionsVisibility: {
+    store: true,
+    wishlist: true,
+    cart: true
+  },
   footerSections: []
 };
 

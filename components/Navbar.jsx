@@ -47,6 +47,12 @@ const Navbar = () => {
   const [categories, setCategories] = useState([]);
   // State for navigation menu items
   const [navMenuItems, setNavMenuItems] = useState([]);
+  const [navMenuEnabled, setNavMenuEnabled] = useState(true);
+  const [navActionsVisibility, setNavActionsVisibility] = useState({
+    store: true,
+    wishlist: true,
+    cart: true
+  });
   // State for animated search placeholder
   const [searchPlaceholder, setSearchPlaceholder] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -98,6 +104,8 @@ const Navbar = () => {
   useEffect(() => {
     const CAT_KEY = 'nav:categories:v1'
     const MENU_KEY = 'nav:menu:v1'
+    const MENU_ENABLED_KEY = 'nav:menu:enabled:v1'
+    const ACTIONS_VISIBILITY_KEY = 'nav:actions:visibility:v1'
     const TTL = 10 * 60 * 1000 // 10 minutes
 
     // 1) Seed from cache immediately
@@ -114,6 +122,27 @@ const Navbar = () => {
         const cached = JSON.parse(rawMenu)
         if (cached && Array.isArray(cached.data) && (Date.now() - cached.ts < TTL)) {
           setNavMenuItems(cached.data)
+        }
+      }
+
+      const rawMenuEnabled = sessionStorage.getItem(MENU_ENABLED_KEY)
+      if (rawMenuEnabled) {
+        const cached = JSON.parse(rawMenuEnabled)
+        if (typeof cached?.data === 'boolean' && (Date.now() - cached.ts < TTL)) {
+          setNavMenuEnabled(cached.data)
+        }
+      }
+
+      const rawActionsVisibility = sessionStorage.getItem(ACTIONS_VISIBILITY_KEY)
+      if (rawActionsVisibility) {
+        const cached = JSON.parse(rawActionsVisibility)
+        const data = cached?.data
+        if (data && typeof data === 'object' && (Date.now() - cached.ts < TTL)) {
+          setNavActionsVisibility({
+            store: data.store !== false,
+            wishlist: data.wishlist !== false,
+            cart: data.cart !== false
+          })
         }
       }
     } catch {}
@@ -138,9 +167,24 @@ const Navbar = () => {
         if (settingsRes.ok) {
           const settingsData = await settingsRes.json()
           const items = settingsData?.settings?.navMenuItems
+          const enabled = settingsData?.settings?.navMenuEnabled
+          const actionsVisibility = settingsData?.settings?.navActionsVisibility
           if (Array.isArray(items)) {
             setNavMenuItems(items)
             try { sessionStorage.setItem(MENU_KEY, JSON.stringify({ ts: Date.now(), data: items })) } catch {}
+          }
+          if (typeof enabled === 'boolean') {
+            setNavMenuEnabled(enabled)
+            try { sessionStorage.setItem(MENU_ENABLED_KEY, JSON.stringify({ ts: Date.now(), data: enabled })) } catch {}
+          }
+          if (actionsVisibility && typeof actionsVisibility === 'object') {
+            const normalized = {
+              store: actionsVisibility.store !== false,
+              wishlist: actionsVisibility.wishlist !== false,
+              cart: actionsVisibility.cart !== false
+            }
+            setNavActionsVisibility(normalized)
+            try { sessionStorage.setItem(ACTIONS_VISIBILITY_KEY, JSON.stringify({ ts: Date.now(), data: normalized })) } catch {}
           }
         }
       } catch (err) {
@@ -160,6 +204,8 @@ const Navbar = () => {
   // Instant menu refresh after dashboard updates nav items/icons.
   useEffect(() => {
     const MENU_KEY = 'nav:menu:v1'
+    const MENU_ENABLED_KEY = 'nav:menu:enabled:v1'
+    const ACTIONS_VISIBILITY_KEY = 'nav:actions:visibility:v1'
 
     const syncNavMenu = async () => {
       try {
@@ -168,9 +214,24 @@ const Navbar = () => {
 
         const settingsData = await settingsRes.json()
         const items = settingsData?.settings?.navMenuItems
+        const enabled = settingsData?.settings?.navMenuEnabled
+        const actionsVisibility = settingsData?.settings?.navActionsVisibility
         if (Array.isArray(items)) {
           setNavMenuItems(items)
           try { sessionStorage.setItem(MENU_KEY, JSON.stringify({ ts: Date.now(), data: items })) } catch {}
+        }
+        if (typeof enabled === 'boolean') {
+          setNavMenuEnabled(enabled)
+          try { sessionStorage.setItem(MENU_ENABLED_KEY, JSON.stringify({ ts: Date.now(), data: enabled })) } catch {}
+        }
+        if (actionsVisibility && typeof actionsVisibility === 'object') {
+          const normalized = {
+            store: actionsVisibility.store !== false,
+            wishlist: actionsVisibility.wishlist !== false,
+            cart: actionsVisibility.cart !== false
+          }
+          setNavActionsVisibility(normalized)
+          try { sessionStorage.setItem(ACTIONS_VISIBILITY_KEY, JSON.stringify({ ts: Date.now(), data: normalized })) } catch {}
         }
       } catch (err) {
         console.error('Navbar instant sync error:', err)
@@ -518,14 +579,17 @@ const Navbar = () => {
           {/* Right Side - Actions */}
           <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
             {/* Store Locator */}
+            {navActionsVisibility.store && (
             <Link href="/find-store" className="flex flex-col items-center gap-0.5 hover:text-red-600 transition text-gray-600">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
               <span className="text-xs font-medium">Store</span>
             </Link>
+            )}
 
             {/* Wishlist */}
+            {navActionsVisibility.wishlist && (
             <Link href={firebaseUser ? "/dashboard/wishlist" : "/wishlist"} className="relative flex flex-col items-center gap-0.5 hover:text-red-600 transition text-gray-600">
               <HeartIcon size={20} className="transition" />
               <span className="text-xs font-medium">Wishlist</span>
@@ -535,8 +599,10 @@ const Navbar = () => {
                 </span>
               )}
             </Link>
+            )}
 
             {/* Cart */}
+            {navActionsVisibility.cart && (
             <button onClick={handleCartClick} className="relative flex flex-col items-center gap-0.5 hover:text-red-600 transition text-gray-600">
               <ShoppingCart size={20} className="transition" />
               <span className="text-xs font-medium">Cart</span>
@@ -546,6 +612,7 @@ const Navbar = () => {
                 </span>
               )}
             </button>
+            )}
 
             {/* Store Dashboard Badge - Shows if user is a seller */}
             {isSeller && (
@@ -681,6 +748,7 @@ const Navbar = () => {
               )
             )}
             
+            {navActionsVisibility.cart && (
             <button onClick={handleCartClick} className="relative p-2">
               <ShoppingCart size={20} className="text-gray-700" />
               {isClient && cartCount > 0 && (
@@ -689,10 +757,12 @@ const Navbar = () => {
                 </span>
               )}
             </button>
+            )}
           </div>
         </div>
 
         {/* Bottom Navigation Bar - Dynamic from settings */}
+        {navMenuEnabled && navMenuItems.length > 0 && (
         <div className="hidden lg:block border-t border-gray-200 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
           <div className="mx-auto max-w-[1320px] px-4">
             <div className="flex items-center justify-between gap-1 py-2">
@@ -819,6 +889,7 @@ const Navbar = () => {
             </div>
           </div>
         </div>
+        )}
 
         {/* Mobile Search Bar - Below main navbar on mobile */}
         <div className="lg:hidden pb-3 px-4" style={{ backgroundColor: '#ffffff' }}>
