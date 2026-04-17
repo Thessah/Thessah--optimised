@@ -24,6 +24,7 @@ const StoreSidebar = ({storeInfo, isAdmin}) => {
         { name: 'Orders', href: '/store/orders', icon: LayoutListIcon },
         { name: 'Return Requests', href: '/store/return-requests', icon: RefreshCw },
         { name: 'Reviews', href: '/store/reviews', icon: StarIcon },
+        { name: 'Enquiry Messages', href: '/store/enquiries', icon: StarIcon },
         { name: 'Contact Us Messages', href: '/store#contact-messages', icon: StarIcon },
     ]
 

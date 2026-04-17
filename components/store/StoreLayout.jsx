@@ -56,6 +56,9 @@ const StoreLayout = ({ children }) => {
     useEffect(() => {
         if (!loading && user) {
             fetchIsSeller();
+        } else if (!loading && !user) {
+            // Prevent infinite spinner on /store routes for signed-out users.
+            setSellerLoading(false);
         }
     }, [loading, user]);
 

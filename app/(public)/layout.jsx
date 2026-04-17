@@ -21,14 +21,16 @@ function PublicLayoutAuthed({ children }) {
     const { cartItems } = useSelector((state) => state.cart);
     const pathname = usePathname();
     const isHomePage = pathname === '/';
+    const shouldPrefetchProducts = !pathname?.startsWith('/category/');
 
     useEffect(() => { 
+        if (!shouldPrefetchProducts) return;
         // Defer product fetch to allow critical content to load first
         const timer = setTimeout(() => {
-            dispatch(fetchProducts({})); 
+            dispatch(fetchProducts({ compact: true, limit: 24 })); 
         }, 100);
         return () => clearTimeout(timer);
-    }, [dispatch]);
+    }, [dispatch, shouldPrefetchProducts]);
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -44,13 +46,15 @@ function PublicLayoutGuest({ children }) {
     const dispatch = useDispatch();
     const pathname = usePathname();
     const isHomePage = pathname === '/';
+    const shouldPrefetchProducts = !pathname?.startsWith('/category/');
     useEffect(() => { 
+        if (!shouldPrefetchProducts) return;
         // Defer product fetch
         const timer = setTimeout(() => {
-            dispatch(fetchProducts({})); 
+            dispatch(fetchProducts({ compact: true, limit: 24 })); 
         }, 100);
         return () => clearTimeout(timer);
-    }, [dispatch]);
+    }, [dispatch, shouldPrefetchProducts]);
     return (
         <div className="flex flex-col min-h-screen">
             {/* <Banner /> */}

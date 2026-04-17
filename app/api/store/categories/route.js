@@ -3,45 +3,27 @@ import authSeller from "@/middlewares/authSeller";
 import connectDB from '@/lib/mongoose';
 import Category from '@/models/Category';
 import Store from '@/models/Store';
+import { auth as adminAuth } from '@/lib/firebase-admin';
 
 const normalizeCategorySlug = (value) =>
     value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-
-// Utility to decode JWT without verification (for audience mismatch cases)
-const decodeTokenWithoutVerification = (token) => {
-    try {
-        const parts = token.split('.');
-        if (parts.length !== 3) {
-            console.error('Invalid token format - parts:', parts.length);
-            return null;
-        }
-        // Add padding if needed
-        let payload = parts[1];
-        const paddingNeeded = 4 - (payload.length % 4);
-        if (paddingNeeded && paddingNeeded !== 4) {
-            payload += '='.repeat(paddingNeeded);
-        }
-        const decoded = Buffer.from(payload, 'base64').toString('utf-8');
-        const parsed = JSON.parse(decoded);
-        console.log('✓ Token decoded successfully - UID:', parsed.uid || parsed.sub);
-        return parsed;
-    } catch (e) {
-        console.error('Failed to decode token:', e.message);
-        return null;
-    }
-};
 
 // GET - Fetch all categories with their children
 export async function GET(req) {
     try {
         // Connect to database first
         await connectDB();
+        const { searchParams } = new URL(req.url);
+        const lite = searchParams.get('lite') === 'true';
         
         // Fetch categories with longer timeout (15 seconds)
         let categories = [];
         try {
             categories = await Promise.race([
-                Category.find({}).sort({ name: 1 }).lean(),
+                Category.find({})
+                    .select(lite ? 'name slug parentId' : 'name slug description image parentId')
+                    .sort({ name: 1 })
+                    .lean(),
                 new Promise((_, reject) => 
                     setTimeout(() => reject(new Error('Categories fetch timeout after 15 seconds')), 15000)
                 )
@@ -69,13 +51,23 @@ export async function GET(req) {
             categories = [];
         }
 
-        return NextResponse.json({ categories }, { status: 200 });
+        return NextResponse.json({ categories }, {
+            status: 200,
+            headers: {
+                'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+            }
+        });
     } catch (error) {
         console.error("❌ Error in categories GET:", error.message);
         return NextResponse.json({ 
             error: "Failed to fetch categories",
             categories: []
-        }, { status: 200 });
+        }, {
+            status: 200,
+            headers: {
+                'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120'
+            }
+        });
     }
 }
 
@@ -92,34 +84,15 @@ export async function POST(req) {
             return NextResponse.json({ error: "Unauthorized: No auth token" }, { status: 401 });
         }
         const idToken = authHeader.split(" ")[1];
-        const { getAuth } = await import('firebase-admin/auth');
-        const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-        if (getApps().length === 0) {
-            initializeApp({ credential: applicationDefault() });
-        }
-        
         let userId, email;
-        
-        // Try to verify token (may fail due to audience mismatch)
+
         try {
-            const decodedToken = await getAuth().verifyIdToken(idToken);
+            const decodedToken = await adminAuth.verifyIdToken(idToken);
             userId = decodedToken.uid;
             email = decodedToken.email;
-            console.log('✓ Firebase token verified for user:', userId);
         } catch (e) {
             console.warn('⚠ Firebase verification failed:', e.message);
-            // Fallback: decode token without verification to extract UID
-            const decoded = decodeTokenWithoutVerification(idToken);
-            if (decoded?.uid) {
-                userId = decoded.uid;
-                email = decoded.email;
-                console.log('✓ Token decoded (unverified) - UID:', userId);
-            } else if (decoded?.sub) {
-                // Firebase uses 'sub' as fallback for UID
-                userId = decoded.sub;
-                email = decoded.email;
-                console.log('✓ Token decoded using sub - UID:', userId);
-            }
+            return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
         }
         
         // Check authorization

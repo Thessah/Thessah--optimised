@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-hot-toast";
 
 import { addToCart, uploadCart } from "@/lib/features/cart/cartSlice";
 import MobileProductActions from "./MobileProductActions";
@@ -31,8 +32,10 @@ const ProductDetails = ({ product, reviews = [] }) => {
   const [showEnquiryModal, setShowEnquiryModal] = useState(false);
   const [enquiryName, setEnquiryName] = useState('');
   const [enquiryEmail, setEnquiryEmail] = useState('');
+  const [enquiryCountryCode, setEnquiryCountryCode] = useState('+971');
   const [enquiryPhone, setEnquiryPhone] = useState('');
   const [enquiryMessage, setEnquiryMessage] = useState('');
+  const [enquirySubmitting, setEnquirySubmitting] = useState(false);
   const { isSignedIn } = useAuth();
   const router = useRouter();
   const dispatch = useDispatch();
@@ -134,12 +137,10 @@ const ProductDetails = ({ product, reviews = [] }) => {
 
   // Prepare default enquiry message with product details
   useEffect(() => {
-    const link = typeof window !== 'undefined' ? window.location.href : '';
-    const firstImage = product.images?.[0] || '';
     setEnquiryMessage(
       `Hello, I'm interested in ${product.name} (SKU: ${product.sku || 'NA'}).\n` +
       (product.brand ? `Brand: ${product.brand}\n` : '') +
-      `Product link: ${link}\nProduct image: ${firstImage}\n\nPlease let me know more details.`
+      `\nPlease share availability, final price, and delivery details.`
     );
   }, [product._id]);
 
@@ -318,11 +319,18 @@ const ProductDetails = ({ product, reviews = [] }) => {
 
   const handleEnquirySubmit = async (e) => {
     e.preventDefault();
+    if (enquirySubmitting) return;
+
+    setEnquirySubmitting(true);
     try {
+      const normalizedPhone = enquiryPhone.trim().startsWith('+')
+        ? enquiryPhone.trim()
+        : `${enquiryCountryCode} ${enquiryPhone.trim()}`;
+
       await axios.post('/api/appointment', {
         name: enquiryName,
         email: enquiryEmail,
-        phone: enquiryPhone,
+        phone: normalizedPhone,
         message: enquiryMessage,
         productId: product._id,
         image: product.images?.[0] || null,
@@ -331,10 +339,12 @@ const ProductDetails = ({ product, reviews = [] }) => {
       setEnquiryName('');
       setEnquiryEmail('');
       setEnquiryPhone('');
-      alert('Your enquiry has been sent. Our team will contact you soon.');
+      toast.success('Enquiry sent successfully. Our team will contact you soon.');
     } catch (err) {
       console.error('Failed to send enquiry', err);
-      alert('Failed to send enquiry. Please try again later.');
+      toast.error('Failed to send enquiry. Please try again later.');
+    } finally {
+      setEnquirySubmitting(false);
     }
   };
 
@@ -519,7 +529,27 @@ const ProductDetails = ({ product, reviews = [] }) => {
                   </div>
                   <div>
                     <label className="text-xs text-gray-600">Phone</label>
-                    <input type="tel" value={enquiryPhone} onChange={(e) => setEnquiryPhone(e.target.value)} required className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                    <div className="mt-1 flex rounded-lg border border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500">
+                      <select
+                        value={enquiryCountryCode}
+                        onChange={(e) => setEnquiryCountryCode(e.target.value)}
+                        className="w-28 shrink-0 border-r border-gray-300 px-2 py-2 text-sm bg-white focus:outline-none"
+                      >
+                        <option value="+971">UAE +971</option>
+                        <option value="+966">Saudi +966</option>
+                        <option value="+91">India +91</option>
+                        <option value="+1">USA +1</option>
+                        <option value="+44">UK +44</option>
+                      </select>
+                      <input
+                        type="tel"
+                        value={enquiryPhone}
+                        onChange={(e) => setEnquiryPhone(e.target.value)}
+                        required
+                        placeholder="50 123 4567"
+                        className="min-w-0 flex-1 px-3 py-2 text-sm focus:outline-none"
+                      />
+                    </div>
                   </div>
                   <div className="hidden md:block"></div>
                 </div>
@@ -528,8 +558,11 @@ const ProductDetails = ({ product, reviews = [] }) => {
                   <textarea value={enquiryMessage} onChange={(e) => setEnquiryMessage(e.target.value)} rows={5} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
                 </div>
                 <div className="flex items-center justify-end gap-3 pt-2">
-                  <button type="button" onClick={() => setShowEnquiryModal(false)} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cancel</button>
-                  <button type="submit" className="px-4 py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-700">Send Enquiry</button>
+                  <button type="button" onClick={() => setShowEnquiryModal(false)} disabled={enquirySubmitting} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed">Cancel</button>
+                  <button type="submit" disabled={enquirySubmitting} className="px-4 py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2">
+                    {enquirySubmitting && <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+                    {enquirySubmitting ? 'Sending...' : 'Send Enquiry'}
+                  </button>
                 </div>
               </form>
             </div>

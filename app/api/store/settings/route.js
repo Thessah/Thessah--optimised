@@ -49,6 +49,17 @@ let cachedSettings = {
   section5GenderCategories: [
     // Admin can override; start empty so UI can populate
   ],
+  section8Heading: {
+    title: 'For an Auspicious Beginning',
+    subtitle: 'Discover our most-loved designs, curated for this Akshaya Tritiya',
+    image: '',
+    visible: true
+  },
+  section8Display: {
+    selectedCategoryIds: [],
+    selectedCategoryNames: [],
+    order: []
+  },
   footerSections: []
 };
 

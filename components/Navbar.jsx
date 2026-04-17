@@ -3,7 +3,7 @@
 
 "use client";
 
-import { PackageIcon, Search, ShoppingCart, LifeBuoy, Menu, X, HeartIcon, StarIcon, ArrowLeft } from "lucide-react";
+import { Search, ShoppingCart, LifeBuoy, Menu, X, HeartIcon, StarIcon, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -155,6 +155,30 @@ const Navbar = () => {
     // Optional gentle refresh every 10 minutes
     const interval = setInterval(revalidate, TTL)
     return () => { clearInterval(interval); controller.abort(); clearTimeout(timer) }
+  }, [])
+
+  // Instant menu refresh after dashboard updates nav items/icons.
+  useEffect(() => {
+    const MENU_KEY = 'nav:menu:v1'
+
+    const syncNavMenu = async () => {
+      try {
+        const settingsRes = await fetch('/api/store/settings', { cache: 'no-store' })
+        if (!settingsRes.ok) return
+
+        const settingsData = await settingsRes.json()
+        const items = settingsData?.settings?.navMenuItems
+        if (Array.isArray(items)) {
+          setNavMenuItems(items)
+          try { sessionStorage.setItem(MENU_KEY, JSON.stringify({ ts: Date.now(), data: items })) } catch {}
+        }
+      } catch (err) {
+        console.error('Navbar instant sync error:', err)
+      }
+    }
+
+    window.addEventListener('navMenuUpdated', syncNavMenu)
+    return () => window.removeEventListener('navMenuUpdated', syncNavMenu)
   }, [])
 
   // Product names for animated placeholder
@@ -694,8 +718,9 @@ const Navbar = () => {
         </div>
 
         {/* Bottom Navigation Bar - Dynamic from settings */}
-        <div className="hidden lg:block border-t border-gray-200">
-          <div className="flex items-center justify-start gap-8 py-3 pl-0">
+        <div className="hidden lg:block border-t border-gray-200 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
+          <div className="mx-auto max-w-[1320px] px-4">
+            <div className="flex items-center justify-between gap-1 py-2">
             {navMenuItems.map((item, index) => {
               const isCollections = item.hasDropdown && item.name.toLowerCase().includes('collection');
 
@@ -703,7 +728,7 @@ const Navbar = () => {
                 return (
                   <div
                     key={index}
-                    className="relative"
+                    className="relative flex-1 flex justify-center"
                     onMouseEnter={() => {
                       if (categoryTimer.current) clearTimeout(categoryTimer.current);
                       setCategoriesDropdownOpen(true);
@@ -716,7 +741,15 @@ const Navbar = () => {
                       }, 200);
                     }}
                   >
-                    <button className="text-sm font-medium text-gray-700 hover:text-red-600 transition flex items-center gap-1 hover:underline underline-offset-8 decoration-2 decoration-red-500">
+                    <button className="text-[13px] font-medium text-gray-700 hover:text-red-600 transition inline-flex items-center gap-1.5 hover:underline underline-offset-[10px] decoration-[1.5px] decoration-red-500 whitespace-nowrap">
+                      {item.icon && (
+                        <img
+                          src={item.icon}
+                          alt=""
+                          className="w-4 h-4 object-contain opacity-80"
+                          aria-hidden="true"
+                        />
+                      )}
                       {item.name}
                       <svg className={`w-4 h-4 transition-transform ${categoriesDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -794,12 +827,21 @@ const Navbar = () => {
                 <Link
                   key={index}
                   href={item.link || '#'}
-                  className="text-sm font-medium text-gray-700 hover:text-red-600 transition hover:underline underline-offset-8 decoration-2 decoration-red-500"
+                  className="flex-1 justify-center text-[13px] font-medium text-gray-700 hover:text-red-600 transition inline-flex items-center gap-1.5 hover:underline underline-offset-[10px] decoration-[1.5px] decoration-red-500 whitespace-nowrap"
                 >
+                  {item.icon && (
+                    <img
+                      src={item.icon}
+                      alt=""
+                      className="w-4 h-4 object-contain opacity-80"
+                      aria-hidden="true"
+                    />
+                  )}
                   {item.name}
                 </Link>
               );
             })}
+            </div>
           </div>
         </div>
 

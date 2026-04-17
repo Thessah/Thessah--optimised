@@ -22,6 +22,7 @@ export default function MenuManagement() {
   const [editingFooterSection, setEditingFooterSection] = useState(null)
   const [editingFooterLinkIndex, setEditingFooterLinkIndex] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [uploadingNavIconIndex, setUploadingNavIconIndex] = useState(null)
 
   useEffect(() => {
     fetchData()
@@ -88,9 +89,51 @@ export default function MenuManagement() {
   }
 
   const addNavMenuItem = () => {
-    setNavMenuItems([...navMenuItems, { name: 'New Item', link: '#', hasDropdown: false }])
+    setNavMenuItems([...navMenuItems, { name: 'New Item', link: '#', hasDropdown: false, icon: '' }])
     setHasNavChanges(true)
     toast.success('New menu item added')
+  }
+
+  const handleNavIconUpload = async (index, file) => {
+    if (!file) return
+
+    setUploadingNavIconIndex(index)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await axios.post('/api/store/upload-banner', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+
+      if (response.data?.url) {
+        const updated = [...navMenuItems]
+        updated[index] = { ...updated[index], icon: response.data.url }
+        setNavMenuItems(updated)
+
+        // Persist immediately so icon appears on frontend without extra manual save step.
+        const saveRes = await axios.put('/api/store/settings', {
+          navMenuItems: updated
+        })
+
+        if (saveRes.data?.settings?.navMenuItems) {
+          setNavMenuItems(saveRes.data.settings.navMenuItems)
+        }
+
+        setHasNavChanges(false)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('navMenuUpdated'))
+        }
+        toast.success('Menu icon uploaded and saved')
+      } else {
+        toast.error('Upload failed: no URL returned')
+      }
+    } catch (error) {
+      console.error('Nav icon upload error:', error)
+      toast.error('Failed to upload menu icon')
+    } finally {
+      setUploadingNavIconIndex(null)
+    }
   }
 
   const deleteNavMenuItem = (index) => {
@@ -178,6 +221,9 @@ export default function MenuManagement() {
       // Update local state with returned data instead of refetching
       if (response.data.settings?.navMenuItems) {
         setNavMenuItems(response.data.settings.navMenuItems)
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('navMenuUpdated'))
       }
     } catch (error) {
       console.error('Save error:', error)
@@ -300,6 +346,44 @@ export default function MenuManagement() {
                       />
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Icon URL (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={item.icon || ''}
+                        onChange={(e) => handleNavItemChange(index, 'icon', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Upload Icon
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleNavIconUpload(index, e.target.files?.[0])}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      />
+                      {uploadingNavIconIndex === index && (
+                        <p className="text-xs text-blue-600 mt-1">Uploading icon...</p>
+                      )}
+                    </div>
+                  </div>
+                  {item.icon && (
+                    <div className="pt-1">
+                      <p className="text-xs text-gray-500 mb-1">Icon preview:</p>
+                      <img
+                        src={item.icon}
+                        alt={`${item.name || 'menu'} icon`}
+                        className="w-8 h-8 object-contain border border-gray-200 rounded"
+                      />
+                    </div>
+                  )}
                   {categories.length > 0 && (
                     <div className="grid grid-cols-2 gap-3">
                       <div>

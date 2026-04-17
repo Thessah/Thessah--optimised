@@ -1,5 +1,6 @@
 import connectDB from "@/lib/mongoose";
 import Product from "@/models/Product";
+import Rating from "@/models/Rating";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
@@ -64,6 +65,7 @@ export async function GET(request){
         const sortBy = searchParams.get('sortBy');
         const limit = parseInt(searchParams.get('limit') || '50', 10); // increased default
         const offset = parseInt(searchParams.get('offset') || '0', 10);
+        const compact = searchParams.get('compact') === 'true';
         const fastDelivery = searchParams.get('fastDelivery');
         const storeId = searchParams.get('storeId');
         const category = searchParams.get('category');
@@ -96,58 +98,66 @@ export async function GET(request){
         }
         
         // Optimized query with field selection
+        const selectedFields = compact
+            ? 'name slug AED price images category sku inStock stockQuantity createdAt showBuyButton showEnquiryButton'
+            : 'name slug description shortDescription AED price images category sku inStock hasVariants variants attributes fastDelivery enableEnquiry showBuyButton showEnquiryButton stockQuantity createdAt tags goldType goldWeight goldRate stoneWeight stonePrice makingCharges';
+
         let products = await Product.find(query)
-            .select('name slug description shortDescription AED price images category sku inStock hasVariants variants attributes fastDelivery enableEnquiry stockQuantity createdAt tags goldType goldWeight goldRate stoneWeight stonePrice makingCharges')
+            .select(selectedFields)
             .sort({ createdAt: -1 })
             .skip(offset)
             .limit(limit)
             .lean()
             .exec();
 
-        // DEBUG: Log all products to help diagnose missing products
-        console.log('[API /api/products] Products returned:', products.map(p => ({ name: p.name, category: p.category, slug: p.slug })));
+        const productIds = products.map((product) => String(product._id));
+        const ratingStats = productIds.length
+            ? await Rating.aggregate([
+                {
+                    $match: {
+                        approved: true,
+                        productId: { $in: productIds },
+                    },
+                },
+                {
+                    $group: {
+                        _id: '$productId',
+                        ratingCount: { $sum: 1 },
+                        averageRating: { $avg: '$rating' },
+                    },
+                },
+            ])
+            : [];
 
-        // Add discount label and review stats if applicable
-        const Rating = (await import('@/models/Rating')).default;
-        products = await Promise.all(products.map(async product => {
-            try {
-                let label = null;
-                let labelType = null;
-                if (typeof product.AED === 'number' && typeof product.price === 'number' && product.AED > product.price) {
-                    const discount = Math.round(((product.AED - product.price) / product.AED) * 100);
-                    if (discount >= 50) {
-                        label = `Min. ${discount}% Off`;
-                        labelType = 'offer';
-                    } else if (discount > 0) {
-                        label = `${discount}% Off`;
-                        labelType = 'offer';
-                    }
+        const ratingStatsMap = new Map(
+            ratingStats.map((entry) => [String(entry._id), entry])
+        );
+
+        products = products.map((product) => {
+            let label = null;
+            let labelType = null;
+
+            if (typeof product.AED === 'number' && typeof product.price === 'number' && product.AED > product.price) {
+                const discount = Math.round(((product.AED - product.price) / product.AED) * 100);
+                if (discount >= 50) {
+                    label = `Min. ${discount}% Off`;
+                    labelType = 'offer';
+                } else if (discount > 0) {
+                    label = `${discount}% Off`;
+                    labelType = 'offer';
                 }
-
-                // Fetch review stats
-                const reviews = await Rating.find({ productId: String(product._id), approved: true }).select('rating').lean();
-                const ratingCount = reviews.length;
-                const averageRating = ratingCount > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / ratingCount) : 0;
-
-                return {
-                    ...product,
-                    label,
-                    labelType,
-                    ratingCount,
-                    averageRating
-                };
-            } catch (err) {
-                console.error('Error mapping product review stats:', err);
-                return {
-                    ...product,
-                    label: null,
-                    labelType: null,
-                    ratingCount: 0,
-                    averageRating: 0,
-                    reviewError: err.message
-                };
             }
-        }));
+
+            const stats = ratingStatsMap.get(String(product._id));
+
+            return {
+                ...product,
+                label,
+                labelType,
+                ratingCount: stats?.ratingCount || 0,
+                averageRating: stats?.averageRating || 0,
+            };
+        });
 
         // Sort based on the sortBy parameter
         if (sortBy === 'orders') {

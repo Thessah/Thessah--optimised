@@ -79,7 +79,6 @@ function CreateStoreAuthed() {
         }
         try {
             const token = await firebaseUser.getIdToken();
-            console.log('[DEBUG] Firebase ID token being sent:', token);
             const formData = new FormData();
             formData.append("name", storeInfo.name);
             formData.append("description", storeInfo.description);

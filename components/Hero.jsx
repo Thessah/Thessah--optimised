@@ -9,6 +9,14 @@ import Image from 'next/image'
 const CACHE_KEY = 'hero-banners:v1'
 const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
+function getOptimizedImageUrl(url, mobile = false) {
+  if (!url) return ''
+  if (!url.includes('ik.imagekit.io')) return url
+
+  const tr = mobile ? 'w-900,q-70,f-auto' : 'w-1800,q-75,f-auto'
+  return url.includes('?') ? `${url}&tr=${tr}` : `${url}?tr=${tr}`
+}
+
 function mapBannersToSlides(banners) {
   const active = Array.isArray(banners) ? banners.filter(b => b && b.isActive !== false) : []
   return active.map(banner => ({
@@ -58,7 +66,7 @@ export default function Hero({ initialSlides = [] }) {
     const timer = setTimeout(() => controller.abort(), 6000) // 6s safety timeout
     ;(async () => {
       try {
-        const res = await fetch('/api/store/hero-banners', { cache: 'no-store', signal: controller.signal })
+        const res = await fetch('/api/store/hero-banners', { cache: 'force-cache', signal: controller.signal })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data = await res.json()
         const dbSlides = mapBannersToSlides(data?.banners || [])
@@ -205,13 +213,14 @@ export default function Hero({ initialSlides = [] }) {
               <div className="relative w-full h-full overflow-hidden rounded-xl sm:rounded-2xl shadow-2xl bg-gray-200">
                 {slide.image && (
                   <Image
-                    src={slide.image}
+                    src={getOptimizedImageUrl(slide.image)}
                     alt={slide.title || 'Banner'}
                     fill
+                    unoptimized
                     priority={i === 1} // Priority load first visible slide
                     loading={i === 1 ? 'eager' : 'lazy'}
-                    quality={85}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
+                    quality={75}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 96vw, 1700px"
                     className="object-cover"
                   />
                 )}

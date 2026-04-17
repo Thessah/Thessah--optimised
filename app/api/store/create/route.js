@@ -22,7 +22,6 @@ export async function POST(request) {
       return json({ error: 'Unauthorized' }, 401);
     }
     const idToken = authHeader.split('Bearer ')[1];
-    console.log('[DEBUG] Received Firebase ID token:', idToken);
     
     const { getAuth } = await import('firebase-admin/auth');
     const { initializeApp, cert, getApps } = await import('firebase-admin/app');
@@ -31,18 +30,16 @@ export async function POST(request) {
       try {
         const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
         if (!serviceAccountKey) {
-          console.error('[DEBUG] FIREBASE_SERVICE_ACCOUNT_KEY not found in environment');
+          console.error('Firebase configuration missing');
           return json({ error: 'Firebase configuration missing' }, 500);
         }
         const serviceAccount = JSON.parse(serviceAccountKey);
-        console.log('[DEBUG] Service account project_id:', serviceAccount.project_id);
         
         initializeApp({
           credential: cert(serviceAccount)
         });
-        console.log('[DEBUG] Firebase Admin initialized successfully');
       } catch (initError) {
-        console.error('[DEBUG] Firebase initialization error:', initError);
+        console.error('Firebase initialization error:', initError);
         return json({ error: 'Firebase initialization failed', details: initError.message }, 500);
       }
     }
@@ -50,10 +47,9 @@ export async function POST(request) {
     let decodedToken;
     try {
       decodedToken = await getAuth().verifyIdToken(idToken);
-      console.log('[DEBUG] Decoded Firebase token:', decodedToken);
     } catch (e) {
-      console.error('[DEBUG] Token verification error:', e);
-      return json({ error: 'Invalid token', details: e.message }, 401);
+      console.error('Token verification error:', e?.message || e);
+      return json({ error: 'Invalid token' }, 401);
     }
     const userId = decodedToken.uid;
     const userEmail = decodedToken.email || '';
@@ -189,7 +185,7 @@ export async function GET(request) {
           credential: cert(serviceAccount)
         });
       } catch (initError) {
-        console.error('[DEBUG] Firebase initialization error:', initError);
+        console.error('Firebase initialization error:', initError);
         return json({ error: 'Firebase initialization failed' }, 500);
       }
     }
@@ -198,8 +194,8 @@ export async function GET(request) {
     try {
       decodedToken = await getAuth().verifyIdToken(idToken);
     } catch (e) {
-      console.error('[DEBUG] Token verification error:', e);
-      return json({ error: 'Invalid token', details: e.message }, 401);
+      console.error('Token verification error:', e?.message || e);
+      return json({ error: 'Invalid token' }, 401);
     }
     const userId = decodedToken.uid;
     if (!userId) return json({ error: "Unauthorized" }, 401);

@@ -23,33 +23,22 @@ export async function POST(request) {
     try {
         await connectDB();
         
-        // Parse and log request
-        const headersObj = Object.fromEntries(request.headers.entries());
         let bodyText = '';
         try { bodyText = await request.text(); } catch (err) { bodyText = '[unreadable]'; }
         let body = {};
         try { body = JSON.parse(bodyText); } catch (err) { body = { raw: bodyText }; }
-        console.log('ORDER API: Incoming request', { method: request.method, headers: headersObj, body });
 
         // Extract fields
         const { addressId, addressData, items, couponCode, paymentMethod, isGuest, guestInfo } = body;
         let userId = null;
         let isPlusMember = false;
 
-        console.log('ORDER API: Full body:', JSON.stringify(body, null, 2));
-        console.log('ORDER API: isGuest value:', isGuest, 'type:', typeof isGuest);
-        console.log('ORDER API: guestInfo exists:', !!guestInfo);
-
         // Auth for logged-in user - ONLY if explicitly NOT a guest
         if (isGuest !== true) {
-            console.log('ORDER API: Not a guest order (isGuest !== true), checking auth header...');
             const authHeader = request.headers.get('authorization');
             if (!authHeader || !authHeader.startsWith('Bearer ')) {
-                console.log('ORDER API: No valid auth header found. isGuest:', isGuest);
                 return NextResponse.json({ 
                     error: 'Authentication required for non-guest orders',
-                    isGuest: isGuest,
-                    hasAuthHeader: !!authHeader
                 }, { status: 401 });
             }
             const idToken = authHeader.split('Bearer ')[1];
@@ -64,14 +53,13 @@ export async function POST(request) {
                 userId = decodedToken.uid;
                 isPlusMember = decodedToken.plan === 'plus';
             } catch (err) {
-                console.error('Token verification error:', err);
-                return NextResponse.json({ error: 'Token verification failed', details: err?.message || err }, { status: 401 });
+                console.error('Token verification error:', err?.message || err);
+                return NextResponse.json({ error: 'Token verification failed' }, { status: 401 });
             }
         }
 
         // Validation
         if (isGuest === true) {
-            console.log('ORDER API: Validating guest order...');
             const missingFields = [];
             if (!guestInfo) missingFields.push('guestInfo');
             else {
@@ -83,13 +71,11 @@ export async function POST(request) {
                 if (!guestInfo.state) missingFields.push('state');
                 if (!guestInfo.country) missingFields.push('country');
             }
-            console.log('ORDER API DEBUG: guestInfo received:', guestInfo);
-            console.log('ORDER API DEBUG: missingFields:', missingFields);
             if (missingFields.length > 0) {
-                return NextResponse.json({ error: 'missing guest information', missingFields, guestInfo }, { status: 400 });
+                return NextResponse.json({ error: 'missing guest information', missingFields }, { status: 400 });
             }
             if (!paymentMethod || !items || !Array.isArray(items) || items.length === 0) {
-                return NextResponse.json({ error: 'missing order details.', details: { paymentMethod, items }, guestInfo }, { status: 400 });
+                return NextResponse.json({ error: 'missing order details.' }, { status: 400 });
             }
         } else {
             if (!userId || !paymentMethod || !items || !Array.isArray(items) || items.length === 0) {
@@ -135,6 +121,9 @@ export async function POST(request) {
 
         // Shipping: use from payload, fallback to 0
         let shippingFee = typeof body.shippingFee === 'number' ? body.shippingFee : 0;
+        if (!Number.isFinite(shippingFee) || shippingFee < 0) {
+            return NextResponse.json({ error: 'Invalid shipping fee' }, { status: 400 });
+        }
         let isShippingFeeAdded = false;
 
         // Order creation
@@ -300,13 +289,9 @@ export async function POST(request) {
                         district: addressData.district || ''
                     };
                 }
-                console.log('FINAL orderData before Order.create:', JSON.stringify(orderData, null, 2));
             }
 
             // Create order
-            console.log('ORDER API DEBUG: orderData keys:', Object.keys(orderData));
-            console.log('ORDER API DEBUG: orderData before Order.create:', JSON.stringify(orderData, null, 2));
-            
             const order = await Order.create(orderData);
             // Set shortOrderNumber (last 6 hex digits of ObjectId as decimal)
             const hex = order._id.toString().slice(-6);
@@ -337,16 +322,6 @@ export async function POST(request) {
                 }
 
                 if (customerEmail) {
-                    console.log('Sending order confirmation email with:', {
-                        email: customerEmail,
-                        name: customerName,
-                        orderId: order._id,
-                        total: order.total,
-                        orderItems: order.orderItems,
-                        shippingAddress: order.shippingAddress,
-                        createdAt: order.createdAt,
-                        paymentMethod: order.paymentMethod || paymentMethod
-                    });
                     await sendOrderConfirmationEmail({
                         email: customerEmail,
                         name: customerName,
@@ -357,10 +332,9 @@ export async function POST(request) {
                         createdAt: order.createdAt,
                         paymentMethod: order.paymentMethod || paymentMethod
                     });
-                    console.log('Order confirmation email sent to customer:', customerEmail);
                 }
             } catch (emailError) {
-                console.error('Error sending order confirmation email:', emailError);
+                console.error('Error sending order confirmation email:', emailError?.message || emailError);
                 // Don't fail the order if email fails
             }
         }
@@ -427,7 +401,7 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Orders Placed Successfully', order, id: order._id.toString() });
         }
     } catch (error) {
-        console.error(error);
+        console.error('Order creation failed:', error?.message || error);
         return NextResponse.json({ error: error.code || error.message }, { status: 400 });
     }
 }

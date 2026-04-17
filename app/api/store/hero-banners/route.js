@@ -17,16 +17,28 @@ export async function GET(req) {
         .toArray();
       cachedBanners = banners; // Update cache from DB
       console.log('✓ Fetched from MongoDB:', banners.length, 'banners');
-      return Response.json({ success: true, banners: banners || [] });
+      return Response.json({ success: true, banners: banners || [] }, {
+        headers: {
+          'Cache-Control': 'public, max-age=120, stale-while-revalidate=600'
+        }
+      });
     } catch (dbError) {
       console.error('✗ MongoDB connection error:', dbError.message);
       // Return cached banners if database fails
       console.log('→ Returning from cache:', cachedBanners.length, 'banners');
-      return Response.json({ success: true, banners: cachedBanners });
+      return Response.json({ success: true, banners: cachedBanners }, {
+        headers: {
+          'Cache-Control': 'public, max-age=120, stale-while-revalidate=600'
+        }
+      });
     }
   } catch (error) {
     console.error('✗ Error in GET /api/store/hero-banners:', error);
-    return Response.json({ success: true, banners: cachedBanners });
+    return Response.json({ success: true, banners: cachedBanners }, {
+      headers: {
+        'Cache-Control': 'public, max-age=120, stale-while-revalidate=600'
+      }
+    });
   }
 }
 

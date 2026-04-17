@@ -44,6 +44,12 @@ const adminSections = [
     description: "Set up Section 7 promos and callouts.",
     icon: LayoutListIcon,
   },
+  {
+    title: "Section 8",
+    href: "/store/section-8",
+    description: "Choose categories and heading for the new product carousel.",
+    icon: LayoutListIcon,
+  },
 ];
 
 export default function StoreHome() {

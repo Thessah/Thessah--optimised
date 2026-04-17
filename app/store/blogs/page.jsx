@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Edit2, Trash2, Plus, Eye, EyeOff, X, Upload, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/lib/useAuth';
 
 export default function AdminBlogs() {
+  const { getToken } = useAuth();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -99,11 +101,15 @@ export default function AdminBlogs() {
 
     try {
       setUploading(true);
+      const token = await getToken();
       const formData = new FormData();
       formData.append('file', file);
 
       const response = await axios.post('/api/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
       });
 
       if (response.data?.url) {
@@ -201,11 +207,15 @@ export default function AdminBlogs() {
 
     try {
       setSliderUploading(true);
+      const token = await getToken();
       const formDataUpload = new FormData();
       formDataUpload.append('file', file);
 
       const response = await axios.post('/api/upload', formDataUpload, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
       });
 
       if (response.data?.url) {

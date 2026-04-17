@@ -19,6 +19,7 @@ import TanishqWorld from "@/components/TanishqWorld";
 import ShopByGender from "@/components/ShopByGender";
 import TanishqExperience from "@/components/TanishqExperience";
 import PromotionBanner from "@/components/PromotionBanner";
+import AuspiciousProductsCarousel from "@/components/AuspiciousProductsCarousel";
 
 // Below-the-fold components - lazy load
 const BannerSlider = dynamic(() => import("@/components/BannerSlider"), { ssr: true });
@@ -152,6 +153,7 @@ export default function Home() {
             {/* <HomeCategories/> */}
             <Hero />
             <CollectionsShowcase />
+            <AuspiciousProductsCarousel />
             <ShopByCategory />
             <TanishqWorld />
             <ShopByGender />

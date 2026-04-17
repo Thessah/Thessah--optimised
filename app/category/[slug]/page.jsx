@@ -16,6 +16,18 @@ const slugify = (value = '') =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
 
+const matchesCategorySlug = (product, normalizedSlug) => {
+  const categorySlug = slugify(product?.category)
+  const altSlug = slugify(product?.categorySlug)
+  const categoryName = (product?.category || '').toString().trim().toLowerCase()
+
+  return (
+    categorySlug === normalizedSlug ||
+    altSlug === normalizedSlug ||
+    categoryName === normalizedSlug.replace(/-/g, ' ')
+  )
+}
+
 export default function CategoryPage() {
   const params = useParams()
   const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug || ''
@@ -28,38 +40,63 @@ export default function CategoryPage() {
   const [sortBy, setSortBy] = useState('newest')
   const [showFilters, setShowFilters] = useState(false)
 
+  const reduxMatchedProducts = useMemo(
+    () => products.filter((product) => matchesCategorySlug(product, normalizedSlug)),
+    [products, normalizedSlug]
+  )
+
+  const fallbackCategoryTitle = useMemo(() => {
+    if (reduxMatchedProducts[0]?.category) return reduxMatchedProducts[0].category
+
+    return normalizedSlug
+      .split('-')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ') || 'Category'
+  }, [reduxMatchedProducts, normalizedSlug])
+
   useEffect(() => {
     const fetchCategoryNameAndProducts = async () => {
+      const hasReduxFallback = reduxMatchedProducts.length > 0
+
       try {
-        setLoading(true)
-        // Fetch category name
-        const res = await axios.get('/api/store/categories')
+        setLoading(!hasReduxFallback)
+        const [categoryRes, productRes] = await Promise.all([
+          axios.get('/api/store/categories?lite=true'),
+          axios.get(`/api/products?category=${encodeURIComponent(fallbackCategoryTitle)}&compact=true`),
+        ])
+
+        // Resolve category name from store categories
+        const res = categoryRes
         const cats = Array.isArray(res.data?.categories) ? res.data.categories : []
         const match = cats.find((c) =>
           (c.slug && c.slug.toLowerCase() === normalizedSlug) ||
           slugify(c.name) === normalizedSlug
         )
+
+        const resolvedTitle = match?.name || fallbackCategoryTitle
+
         if (match?.name) {
           setCategoryTitle(match.name)
         } else {
-          // Fallback: prettify slug
-          const pretty = normalizedSlug
-            .split('-')
-            .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-            .join(' ')
-          setCategoryTitle(pretty || 'Category')
+          setCategoryTitle(fallbackCategoryTitle)
         }
-        // Fetch products for this category directly from API
-        const prodRes = await axios.get(`/api/products?category=${encodeURIComponent(match?.name || normalizedSlug)}`)
-        setFetchedProducts(Array.isArray(prodRes.data?.products) ? prodRes.data.products : [])
+
+        if (!match?.name && resolvedTitle !== fallbackCategoryTitle) {
+          const refinedRes = await axios.get(`/api/products?category=${encodeURIComponent(resolvedTitle)}&compact=true`)
+          setFetchedProducts(Array.isArray(refinedRes.data?.products) ? refinedRes.data.products : [])
+        } else {
+          setFetchedProducts(Array.isArray(productRes.data?.products) ? productRes.data.products : [])
+        }
       } catch (e) {
-        setFetchedProducts([])
+        if (!hasReduxFallback) {
+          setFetchedProducts([])
+        }
       } finally {
         setLoading(false)
       }
     }
     fetchCategoryNameAndProducts()
-  }, [normalizedSlug])
+  }, [normalizedSlug, fallbackCategoryTitle, reduxMatchedProducts.length])
 
   // Prefer fetchedProducts if available, else fallback to Redux filtered
   const filteredProducts = useMemo(() => {
@@ -67,18 +104,8 @@ export default function CategoryPage() {
     
     if (Array.isArray(fetchedProducts)) {
       productsToFilter = fetchedProducts;
-    } else if (products && Array.isArray(products)) {
-      productsToFilter = products.filter((p) => {
-        const normalize = (val) => (val || '').toString().trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        const catSlug = normalize(p.category);
-        const altSlug = normalize(p.categorySlug);
-        const catName = (p.category || '').toString().trim().toLowerCase();
-        return (
-          catSlug === normalizedSlug ||
-          altSlug === normalizedSlug ||
-          catName === normalizedSlug.replace(/-/g, ' ')
-        );
-      });
+    } else if (reduxMatchedProducts.length > 0) {
+      productsToFilter = [...reduxMatchedProducts];
     }
     
     // Apply filters

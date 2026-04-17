@@ -1,11 +1,42 @@
 import { NextResponse } from 'next/server'
 import { sendMail } from '@/lib/email'
+import connectDB from '@/lib/mongoose'
+import EnquiryMessage from '@/models/EnquiryMessage'
+import Product from '@/models/Product'
 
 export async function POST(request) {
   try {
-    const { name, email, phone, date, time, type, store, message } = await request.json()
+    const { name, email, phone, date, time, type, store, message, productId, image } = await request.json()
     if (!name || !email || !phone) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    let enquiryStore = store || null
+
+    try {
+      await connectDB()
+
+      if (!enquiryStore && productId) {
+        const product = await Product.findById(productId).select('storeId').lean()
+        enquiryStore = product?.storeId || null
+      }
+
+      await EnquiryMessage.create({
+        name,
+        email,
+        phone,
+        date: date || null,
+        time: time || null,
+        type: type || (productId ? 'Product Enquiry' : 'Appointment Request'),
+        store: enquiryStore,
+        message: message || '',
+        productId: productId || null,
+        image: image || null,
+        source: productId ? 'product' : 'appointment',
+      })
+    } catch (dbError) {
+      console.error('Failed to save enquiry message:', dbError)
+      // Continue execution so email still works even if DB write fails.
     }
 
     const subject = `New Appointment Request — ${name}`

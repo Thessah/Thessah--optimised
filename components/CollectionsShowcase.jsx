@@ -16,10 +16,10 @@ export default function CollectionsShowcase() {
   })
 
   const fetchData = async () => {
-    try {
-      const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), 6000)
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort('timeout'), 6000)
 
+    try {
       const [collectionsRes, settingsRes] = await Promise.all([
         fetch('/api/store/collections', { cache: 'no-store', signal: controller.signal }),
         fetch('/api/store/settings', { cache: 'no-store', signal: controller.signal })
@@ -41,10 +41,14 @@ export default function CollectionsShowcase() {
           try { sessionStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: data.settings.collectionsHeading })) } catch {}
         }
       }
-
-      clearTimeout(timer)
     } catch (error) {
+      if (error?.name === 'AbortError') {
+        // Expected in slow networks due to timeout.
+        return
+      }
       console.error('Error fetching collections:', error)
+    } finally {
+      clearTimeout(timer)
     }
   }
 
