@@ -45,7 +45,27 @@ export default function ThessahExperience() {
 
   // Show section even if no experiences are configured yet
   if (loading) {
-    return null
+    return (
+      <section className="w-full bg-gradient-to-b from-gray-50 to-white py-12 sm:py-16 lg:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 sm:mb-12">
+            <div className="h-10 sm:h-12 lg:h-14 w-[320px] sm:w-[460px] max-w-full bg-gray-200 rounded-lg mx-auto animate-pulse mb-3" />
+            <div className="h-6 w-56 sm:w-72 bg-gray-200 rounded-lg mx-auto animate-pulse" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="overflow-hidden rounded-xl bg-white shadow-md">
+                <div className="aspect-[4/3] bg-gray-200 animate-pulse" />
+                <div className="p-4">
+                  <div className="h-5 w-2/3 mx-auto bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
   }
 
   return (

@@ -3,7 +3,7 @@
 
 "use client";
 
-import { Search, ShoppingCart, LifeBuoy, Menu, X, HeartIcon, StarIcon, ArrowLeft } from "lucide-react";
+import { Search, ShoppingCart, LifeBuoy, Menu, X, HeartIcon, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -403,7 +403,7 @@ const Navbar = () => {
 
             {/* Search Bar */}
             <form onSubmit={handleSearch} className="flex-1">
-              <div className="flex items-center gap-3 bg-gray-50 px-4 py-2.5 rounded-md border border-green-200">
+              <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-all focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-gray-100">
                 <Search size={18} className="text-gray-400 flex-shrink-0" />
                 <input
                   type="text"
@@ -412,12 +412,6 @@ const Navbar = () => {
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full bg-transparent outline-none placeholder-gray-400 text-gray-700 text-sm"
                 />
-                <button type="button" className="p-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-400">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-                  </svg>
-                </button>
               </div>
             </form>
 
@@ -461,7 +455,7 @@ const Navbar = () => {
           {/* Center - Search Bar */}
           <div className="hidden lg:flex items-center flex-1 justify-center px-8 max-w-3xl">
             {/* Search Bar - Thessah Style */}
-            <form onSubmit={handleSearch} className="flex items-center w-full gap-3 bg-gray-50 px-5 py-2.5 rounded-md border border-green-200 hover:bg-gray-100 hover:border-green-300 focus-within:bg-white focus-within:border-green-400 focus-within:shadow-sm transition-all">
+            <form onSubmit={handleSearch} className="flex items-center w-full gap-3 rounded-xl border border-gray-200 bg-white px-5 py-2.5 shadow-sm transition-all hover:border-gray-300 focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-gray-100">
               <Search size={18} className="text-gray-400 flex-shrink-0" />
               <input
                 type="text"
@@ -470,25 +464,6 @@ const Navbar = () => {
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full bg-transparent outline-none placeholder-gray-400 text-gray-700 text-[15px] font-normal"
               />
-              <button 
-                type="button" 
-                className="flex-shrink-0 p-1 hover:bg-gray-200 rounded transition"
-                onClick={() => setShowImageSearch(true)}
-                title="Search by image"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-400">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-                </svg>
-              </button>
-              {/* Camera Icon for image search (temporarily hidden)
-              <button type="button" className="flex-shrink-0" onClick={() => setShowImageSearch(true)}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-500 hover:text-blue-600">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5V7.5A2.25 2.25 0 015.25 5.25h2.086a2.25 2.25 0 001.591-.659l.828-.828A2.25 2.25 0 0111.75 3h.5a2.25 2.25 0 011.595.663l.828.828a2.25 2.25 0 001.591.659h2.086A2.25 2.25 0 0121 7.5v9a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 16.5z" />
-                  <circle cx="12" cy="13" r="3" />
-                </svg>
-              </button>
-              */}
             </form>
             {/* Image Search Modal (Desktop only) */}
             {typeof window !== 'undefined' && window.innerWidth >= 768 && showImageSearch && (
@@ -847,7 +822,7 @@ const Navbar = () => {
 
         {/* Mobile Search Bar - Below main navbar on mobile */}
         <div className="lg:hidden pb-3 px-4" style={{ backgroundColor: '#ffffff' }}>
-          <form onSubmit={handleSearch} className="flex items-center gap-3 bg-gray-50 px-4 py-2.5 rounded-md border border-green-200">
+          <form onSubmit={handleSearch} className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-all focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-gray-100">
             <Search size={18} className="text-gray-400" />
             <input
               type="text"
@@ -856,16 +831,6 @@ const Navbar = () => {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-transparent outline-none placeholder-gray-400 text-gray-700 text-sm"
             />
-            <button 
-              type="button"
-              onClick={() => setShowImageSearch(true)}
-              className="p-1"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-400">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-              </svg>
-            </button>
           </form>
         </div>
 

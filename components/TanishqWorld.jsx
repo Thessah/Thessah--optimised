@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import axios from 'axios'
 
@@ -63,6 +62,34 @@ export default function ThessahWorld() {
   if (collections.length === 0 && !loading) {
     console.log('⚠️ Not rendering - no valid collections')
     return null // Don't render if no collections selected
+  }
+
+  if (loading) {
+    return (
+      <section className="w-full bg-white py-8 sm:py-10 lg:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 sm:mb-12">
+            <div className="h-10 sm:h-12 lg:h-14 w-[300px] sm:w-[420px] max-w-full bg-gray-200 rounded-lg mx-auto animate-pulse mb-3" />
+            <div className="h-6 w-56 sm:w-64 bg-gray-200 rounded-lg mx-auto animate-pulse" />
+          </div>
+
+          <div className="sm:hidden flex gap-4 overflow-x-auto pb-4 px-2">
+            {Array.from({ length: 2 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="flex-shrink-0 w-[85vw] h-[300px] rounded-2xl bg-gray-200 animate-pulse"
+              />
+            ))}
+          </div>
+
+          <div className="hidden sm:grid sm:grid-cols-2 gap-4 sm:gap-6">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div key={idx} className="h-[350px] lg:h-[400px] rounded-2xl bg-gray-200 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
   }
 
   return (

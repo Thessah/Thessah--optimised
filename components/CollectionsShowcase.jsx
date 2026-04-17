@@ -42,7 +42,12 @@ export default function CollectionsShowcase() {
         }
       }
     } catch (error) {
-      if (error?.name === 'AbortError') {
+      const isExpectedTimeout =
+        error?.name === 'AbortError' ||
+        error === 'timeout' ||
+        error?.message === 'timeout'
+
+      if (isExpectedTimeout) {
         // Expected in slow networks due to timeout.
         return
       }

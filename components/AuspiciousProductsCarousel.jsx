@@ -37,10 +37,33 @@ export default function AuspiciousProductsCarousel() {
     visible: true
   })
   const [selectedCategoryNames, setSelectedCategoryNames] = useState([])
+  const [productsLoading, setProductsLoading] = useState(list.length === 0)
+  const [settingsLoading, setSettingsLoading] = useState(true)
 
   useEffect(() => {
-    if (list.length === 0) {
-      dispatch(fetchProducts({ limit: 48 }))
+    let active = true
+
+    const loadProducts = async () => {
+      if (list.length === 0) {
+        setProductsLoading(true)
+        try {
+          await dispatch(fetchProducts({ limit: 48 })).unwrap()
+        } catch {
+          // Keep section resilient; show no cards if fetch fails.
+        } finally {
+          if (active) {
+            setProductsLoading(false)
+          }
+        }
+      } else {
+        setProductsLoading(false)
+      }
+    }
+
+    loadProducts()
+
+    return () => {
+      active = false
     }
   }, [dispatch, list.length])
 
@@ -64,6 +87,8 @@ export default function AuspiciousProductsCarousel() {
         setSelectedCategoryNames(names)
       } catch (error) {
         console.error('Failed to load section 8 settings:', error)
+      } finally {
+        setSettingsLoading(false)
       }
     }
 
@@ -98,7 +123,11 @@ export default function AuspiciousProductsCarousel() {
     return mixed.length > 0 ? mixed : base.slice(0, 12)
   }, [list, selectedCategoryNames])
 
-  if (heading.visible === false || products.length === 0) return null
+  const isLoading = productsLoading || settingsLoading
+
+  if (heading.visible === false) return null
+
+  if (!isLoading && products.length === 0) return null
 
   const scrollByCards = (direction) => {
     if (!railRef.current) return
@@ -116,14 +145,23 @@ export default function AuspiciousProductsCarousel() {
     <section className="w-full bg-[#f7f7f7] py-10 sm:py-12">
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative text-center mb-7 sm:mb-9">
-          <h2 className="text-[36px] sm:text-[52px] leading-tight font-serif text-[#2f0d12]">
-            {heading.title || 'For an Auspicious Beginning'}
-          </h2>
-          <p className="text-[16px] sm:text-[22px] mt-1 text-[#9d8576] font-light leading-tight max-w-[900px] mx-auto">
-            {heading.subtitle || 'Discover our most-loved designs, curated for this Akshaya Tritiya'}
-          </p>
+          {isLoading ? (
+            <>
+              <div className="h-[44px] sm:h-[60px] w-[340px] sm:w-[620px] max-w-full mx-auto rounded-lg bg-gray-200 animate-pulse" />
+              <div className="h-7 sm:h-8 mt-3 w-[300px] sm:w-[720px] max-w-full mx-auto rounded-lg bg-gray-200 animate-pulse" />
+            </>
+          ) : (
+            <>
+              <h2 className="text-[36px] sm:text-[52px] leading-tight font-serif text-[#2f0d12]">
+                {heading.title || 'For an Auspicious Beginning'}
+              </h2>
+              <p className="text-[16px] sm:text-[22px] mt-1 text-[#9d8576] font-light leading-tight max-w-[900px] mx-auto">
+                {heading.subtitle || 'Discover our most-loved designs, curated for this Akshaya Tritiya'}
+              </p>
+            </>
+          )}
 
-          {heading.image && (
+          {!isLoading && heading.image && (
             <div className="mt-4 mx-auto w-full max-w-[540px]">
               <div className="relative h-[120px] sm:h-[160px] rounded-xl overflow-hidden shadow-sm">
                 <Image
@@ -137,62 +175,76 @@ export default function AuspiciousProductsCarousel() {
             </div>
           )}
 
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-4">
-            <button
-              onClick={() => scrollByCards('left')}
-              className="p-1.5 text-[#8c6a66] hover:text-[#5b2726] transition"
-              aria-label="Previous products"
-            >
-              <ChevronLeft size={26} />
-            </button>
-            <button
-              onClick={() => scrollByCards('right')}
-              className="p-1.5 text-[#8c6a66] hover:text-[#5b2726] transition"
-              aria-label="Next products"
-            >
-              <ChevronRight size={26} />
-            </button>
-          </div>
+          {!isLoading && (
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-4">
+              <button
+                onClick={() => scrollByCards('left')}
+                className="p-1.5 text-[#8c6a66] hover:text-[#5b2726] transition"
+                aria-label="Previous products"
+              >
+                <ChevronLeft size={26} />
+              </button>
+              <button
+                onClick={() => scrollByCards('right')}
+                className="p-1.5 text-[#8c6a66] hover:text-[#5b2726] transition"
+                aria-label="Next products"
+              >
+                <ChevronRight size={26} />
+              </button>
+            </div>
+          )}
         </div>
 
         <div
           ref={railRef}
           className="flex gap-5 overflow-x-auto snap-x snap-mandatory pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {products.map((product) => {
-            const productName = product.name || product.title || 'Product'
-            const priceText = formatPrice(product.price || product.AED)
-
-            return (
-              <Link
-                key={product._id || product.id}
-                href={`/product/${product.slug || product._id || product.id}`}
-                data-card
-                className="snap-start shrink-0 w-[76%] sm:w-[45%] lg:w-[24%]"
-              >
-                <div className="rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition">
-                  <div className="relative aspect-[4/4] bg-gray-100">
-                    <Image
-                      src={getImageSrc(product)}
-                      alt={productName}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 76vw, (max-width: 1024px) 45vw, 24vw"
-                    />
-                  </div>
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, idx) => (
+              <div key={idx} className="snap-start shrink-0 w-[76%] sm:w-[45%] lg:w-[24%]">
+                <div className="rounded-xl overflow-hidden bg-white shadow-sm">
+                  <div className="aspect-[4/4] bg-gray-200 animate-pulse" />
                 </div>
+                <div className="mt-3 h-5 w-3/4 bg-gray-200 rounded animate-pulse" />
+                <div className="mt-2 h-5 w-1/3 bg-gray-200 rounded animate-pulse" />
+              </div>
+            ))
+          ) : (
+            products.map((product) => {
+              const productName = product.name || product.title || 'Product'
+              const priceText = formatPrice(product.price || product.AED)
 
-                <p className="mt-3 text-[15px] sm:text-[17px] text-[#1f1b1b] font-serif truncate leading-tight">
-                  {productName}
-                </p>
-                {priceText && (
-                  <p className="text-[16px] sm:text-[18px] leading-tight text-[#1f1b1b] font-serif mt-1">
-                    {priceText}
+              return (
+                <Link
+                  key={product._id || product.id}
+                  href={`/product/${product.slug || product._id || product.id}`}
+                  data-card
+                  className="snap-start shrink-0 w-[76%] sm:w-[45%] lg:w-[24%]"
+                >
+                  <div className="rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition">
+                    <div className="relative aspect-[4/4] bg-gray-100">
+                      <Image
+                        src={getImageSrc(product)}
+                        alt={productName}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 76vw, (max-width: 1024px) 45vw, 24vw"
+                      />
+                    </div>
+                  </div>
+
+                  <p className="mt-3 text-[15px] sm:text-[17px] text-[#1f1b1b] font-serif truncate leading-tight">
+                    {productName}
                   </p>
-                )}
-              </Link>
-            )
-          })}
+                  {priceText && (
+                    <p className="text-[16px] sm:text-[18px] leading-tight text-[#1f1b1b] font-serif mt-1">
+                      {priceText}
+                    </p>
+                  )}
+                </Link>
+              )
+            })
+          )}
         </div>
       </div>
     </section>
