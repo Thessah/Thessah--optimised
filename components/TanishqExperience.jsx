@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import axios from 'axios'
 
-export default function TanishqExperience() {
+export default function ThessahExperience() {
   const [heading, setHeading] = useState({
-    title: 'Tanishq Experience',
+    title: 'Thessah Experience',
     subtitle: 'Find a Boutique or Book a Consultation'
   })
   const [experiences, setExperiences] = useState([])
@@ -28,8 +28,13 @@ export default function TanishqExperience() {
 
       if (settingsRes.data.settings?.section7Experiences) {
         const dbExperiences = settingsRes.data.settings.section7Experiences
-        // Show all experiences, even without images
-        const validExperiences = dbExperiences.filter(exp => exp.title)
+        // Normalize image key to support legacy payloads.
+        const validExperiences = dbExperiences
+          .map((exp) => ({
+            ...exp,
+            image: exp.image || exp.imageUrl || exp.bannerImage || ''
+          }))
+          .filter(exp => exp.title)
         setExperiences(validExperiences)
       }
 

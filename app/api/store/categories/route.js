@@ -4,6 +4,9 @@ import connectDB from '@/lib/mongoose';
 import Category from '@/models/Category';
 import Store from '@/models/Store';
 
+const normalizeCategorySlug = (value) =>
+    value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
 // Utility to decode JWT without verification (for audience mismatch cases)
 const decodeTokenWithoutVerification = (token) => {
     try {
@@ -170,20 +173,30 @@ export async function POST(req) {
         }
 
         const { name, description, image, parentId } = await req.json();
-        if (!name) {
+        const trimmedName = name?.trim();
+
+        if (!trimmedName) {
             return NextResponse.json({ error: "Category name is required" }, { status: 400 });
         }
 
         // Generate slug from name
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const slug = normalizeCategorySlug(trimmedName);
+
+        const existingCategory = await Category.findOne({ slug }).lean();
+        if (existingCategory) {
+            return NextResponse.json({
+                success: false,
+                error: `Category \"${trimmedName}\" already exists`
+            }, { status: 409 });
+        }
 
         // Create category - wait up to 30 seconds for MongoDB to respond
         let category = null;
         try {
-            console.log('→ Attempting to create category:', name);
+            console.log('→ Attempting to create category:', trimmedName);
             category = await Promise.race([
                 Category.create({
-                    name,
+                    name: trimmedName,
                     slug,
                     description: description || null,
                     image: image || null,
@@ -193,7 +206,7 @@ export async function POST(req) {
                     setTimeout(() => reject(new Error('Database timeout - MongoDB taking too long')), 30000)
                 )
             ]);
-            console.log('✓ Category created successfully:', category._id, '-', name);
+            console.log('✓ Category created successfully:', category._id, '-', trimmedName);
             
             return NextResponse.json({ 
                 success: true,
@@ -202,6 +215,14 @@ export async function POST(req) {
             }, { status: 201 });
         } catch (createError) {
             console.error('❌ Category creation failed:', createError.message);
+
+            if (createError?.code === 11000) {
+                return NextResponse.json({
+                    success: false,
+                    error: `Category \"${trimmedName}\" already exists`
+                }, { status: 409 });
+            }
+
             return NextResponse.json({ 
                 success: false,
                 error: createError.message.includes('timeout') 

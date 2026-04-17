@@ -1,8 +1,7 @@
 "use client";
 import { useAuth } from "@/lib/useAuth";
-import { ShoppingCartIcon, Heart } from 'lucide-react'
-import React, { useState, useRef, useCallback, Suspense } from 'react'
-const StarIcon = React.lazy(() => import('lucide-react').then(mod => ({ default: mod.StarIcon })));
+import { ShoppingCartIcon, Heart, StarIcon } from 'lucide-react'
+import React, { useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 // ...existing code...
@@ -13,7 +12,7 @@ import { uploadCart } from '@/lib/features/cart/cartSlice'
 import toast from 'react-hot-toast'
 
 const ProductCard = ({ product }) => {
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'AED'
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_LABEL || process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'AED'
     const dispatch = useDispatch()
     const { getToken } = useAuth()
     const cartItems = useSelector(state => state.cart.cartItems)
@@ -49,6 +48,7 @@ const ProductCard = ({ product }) => {
     const ratingCount = reviews.length > 0
         ? reviews.length
         : (typeof product.ratingCount === 'number' ? product.ratingCount : 0);
+    const ratingValue = Math.max(0, Math.min(5, Number(averageRating) || 0));
 
     // Calculate discount percentage
     const discount = product.AED && product.AED > product.price
@@ -122,15 +122,42 @@ const ProductCard = ({ product }) => {
                     </button>
                 </div>
                 {/* Product Details */}
-                <div className="flex flex-col p-3 gap-1">
+                <div className="flex flex-col p-3.5 gap-1.5">
                     {/* Product Name */}
-                    <h3 className="text-base font-normal text-gray-900 line-clamp-2 leading-snug">{product.name}</h3>
+                    <h3 className="text-[17px] font-semibold tracking-tight text-slate-900 line-clamp-2 leading-[1.25]">
+                        {product.name}
+                    </h3>
+                    {/* Reviews */}
+                    <div
+                        className="flex items-center gap-2"
+                        aria-label={`Rating ${ratingCount > 0 ? ratingValue.toFixed(1) : '0.0'} out of 5 from ${ratingCount} reviews`}
+                    >
+                        <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((star) => {
+                                const isFilled = ratingCount > 0 && star <= Math.round(ratingValue)
+                                return (
+                                    <StarIcon
+                                        key={star}
+                                        size={14}
+                                        className={isFilled ? 'text-amber-500' : 'text-slate-300'}
+                                        fill={isFilled ? 'currentColor' : 'none'}
+                                    />
+                                )
+                            })}
+                        </div>
+                        <span className="text-xs font-medium text-slate-500">({ratingCount})</span>
+                    </div>
                     {/* Price */}
                     {showPrice && (
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-semibold text-gray-900">₹ {Number(product.price).toLocaleString('en-IN')}</span>
+                        <div className="flex items-end gap-2">
+                            <span className="inline-flex items-end gap-1.5">
+                                <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">{currency}</span>
+                                <span className="text-[33px] leading-none font-bold text-slate-900">{Number(product.price).toLocaleString('en-IN')}</span>
+                            </span>
                             {Number(product.AED) > 0 && Number(product.AED) > Number(product.price) && (
-                                <span className="text-sm text-gray-400 line-through">₹ {Number(product.AED).toLocaleString('en-IN')}</span>
+                                <span className="text-xs font-medium text-slate-400 line-through pb-1">
+                                    {currency} {Number(product.AED).toLocaleString('en-IN')}
+                                </span>
                             )}
                         </div>
                     )}

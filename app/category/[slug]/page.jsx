@@ -122,7 +122,7 @@ export default function CategoryPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3 mb-6 pb-4 border-b">
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         {/* Filter Toggle */}
         <button
           onClick={() => setShowFilters(!showFilters)}

@@ -21,7 +21,7 @@ export default function Section6Settings() {
       buttonBgColor: '#dc2626' // red-600
     },
     rightSection: {
-      branding: 'TANISHQ',
+      branding: 'Thessah',
       brandingColor: '#f59e0b', // amber-500
       title: 'Exchange your Old Gold',
       titleColor: '#111827', // gray-900

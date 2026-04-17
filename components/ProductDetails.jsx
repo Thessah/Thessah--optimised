@@ -279,9 +279,30 @@ const ProductDetails = ({ product, reviews = [] }) => {
       telegram: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
     };
     if (shareUrls[platform]) {
-      window.open(shareUrls[platform], '_blank', 'width=600,height=400');
+      const win = window.open(shareUrls[platform], '_blank', 'noopener,noreferrer,width=600,height=700');
+      // Fallback for browsers that block popup windows
+      if (!win) {
+        window.location.href = shareUrls[platform];
+      }
       setShowShareMenu(false);
     }
+  };
+
+  const toggleShareMenu = async () => {
+    // Use native share on supported mobile browsers for better reliability.
+    if (typeof navigator !== 'undefined' && navigator.share && typeof window !== 'undefined' && window.innerWidth < 768) {
+      try {
+        await navigator.share({
+          title: product.name,
+          text: `Check out ${product.name}`,
+          url: window.location.href,
+        });
+        return;
+      } catch {
+        // User canceled or browser failed; fall back to menu toggle.
+      }
+    }
+    setShowShareMenu((prev) => !prev);
   };
 
   const copyToClipboard = async () => {
@@ -387,14 +408,15 @@ const ProductDetails = ({ product, reviews = [] }) => {
               <HeartIcon size={16} className={isInWishlist ? 'text-red-500' : 'text-orange-700'} strokeWidth={2} />
               <span>{isInWishlist ? 'Saved' : 'Wishlist'}</span>
             </button>
-            <button type="button" className="flex items-center gap-1 hover:text-orange-800" onClick={() => setShowShareMenu((prev) => !prev)}>
-              <Share2Icon size={16} className="text-orange-700" strokeWidth={2} />
-              <span>Share</span>
-            </button>
+            <div className="relative">
+              <button type="button" className="flex items-center gap-1 hover:text-orange-800" onClick={toggleShareMenu}>
+                <Share2Icon size={16} className="text-orange-700" strokeWidth={2} />
+                <span>Share</span>
+              </button>
 
-            {/* Share Menu Dropdown */}
-            {showShareMenu && (
-              <div ref={shareMenuRef} className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-64 z-50">
+              {/* Share Menu Dropdown */}
+              {showShareMenu && (
+                <div ref={shareMenuRef} className="absolute left-1/2 top-full mt-2 -translate-x-1/2 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-64 z-50">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-900">Share this product</h3>
                   <button onClick={() => setShowShareMenu(false)} className="text-gray-400 hover:text-gray-600">
@@ -460,8 +482,9 @@ const ProductDetails = ({ product, reviews = [] }) => {
                     <span className="text-sm font-medium text-gray-700">{copied ? 'Copied!' : 'Copy Link'}</span>
                   </button>
                 </div>
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

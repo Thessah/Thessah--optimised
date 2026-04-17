@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import axios from 'axios'
 
-export default function TanishqWorld() {
+export default function ThessahWorld() {
   const [heading, setHeading] = useState({
     title: 'Thessah World',
     subtitle: 'A companion for every occasion'

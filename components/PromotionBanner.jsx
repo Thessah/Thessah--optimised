@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -20,7 +20,7 @@ export default function PromotionBanner() {
       buttonBgColor: '#dc2626'
     },
     rightSection: {
-      branding: 'TANISHQ',
+      branding: 'Thessah',
       brandingColor: '#f59e0b',
       title: 'Exchange your Old Gold',
       titleColor: '#111827',
@@ -97,13 +97,12 @@ export default function PromotionBanner() {
             <div>
               <Link
                 href={settings.leftSection.buttonLink}
-                className="inline-flex items-center gap-2 px-6 py-3 border-2 font-semibold hover:text-white transition-all duration-300 rounded-full text-sm"
+                className="inline-flex items-center gap-2 px-6 py-3 border-2 font-semibold text-white transition-all duration-300 rounded-full text-sm hover:brightness-95 hover:-translate-y-0.5"
                 style={{ 
                   borderColor: settings.leftSection.buttonColor, 
-                  color: settings.leftSection.buttonColor 
+                  color: '#ffffff',
+                  backgroundColor: settings.leftSection.buttonBgColor
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = settings.leftSection.buttonBgColor}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 {settings.leftSection.buttonText}
                 <span>›</span>
@@ -142,13 +141,12 @@ export default function PromotionBanner() {
             <div>
               <Link
                 href={settings.rightSection.buttonLink}
-                className="inline-flex items-center gap-2 px-6 py-3 border-2 font-semibold hover:text-white transition-all duration-300 rounded-full text-sm"
+                className="inline-flex items-center gap-2 px-6 py-3 border-2 font-semibold text-white transition-all duration-300 rounded-full text-sm hover:brightness-95 hover:-translate-y-0.5"
                 style={{ 
                   borderColor: settings.rightSection.buttonColor, 
-                  color: settings.rightSection.buttonColor 
+                  color: '#ffffff',
+                  backgroundColor: settings.rightSection.buttonBgColor
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = settings.rightSection.buttonBgColor}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 {settings.rightSection.buttonText}
                 <span>›</span>

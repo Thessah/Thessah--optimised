@@ -10,22 +10,22 @@ export default function AboutUsPage() {
     {
       id: 1,
       title: 'Initial Foray',
-      content: 'The journey of Tanishq started with the launch of 15k gold watches studded with precious stones in 1994. But, it soon grew into a 22K jeweller who presented a stunning range of gold and diamond jewellery. The term Tanishq was coined by Mr. Xerxes Desai by marrying the words "Ta" representing TATA and "nishq" meaning a gold ornament and Tanishq\'s very first state-of-art jewellery factory with a proper kanigar park was set up in Hosur in Tamil Nadu'
+      content: 'The journey of thessah started with the launch of 15k gold watches studded with precious stones in 1994. But, it soon grew into a 22K jeweller who presented a stunning range of gold and diamond jewellery. The term thessah was coined by Mr. Xerxes Desai by marrying the words "Ta" representing TATA and "nishq" meaning a gold ornament and thessah\'s very first state-of-art jewellery factory with a proper kanigar park was set up in Hosur in Tamil Nadu'
     },
     {
       id: 2,
       title: 'Timeless Appeal',
-      content: 'At Tanishq, jewellery is not a product but a manifestation of artistry and our exquisite range of jewel pieces strike the perfect balance between traditional charm and contemporary appeal. With designs that capture the beauty and celebration of special occasions in the life of the Indian woman, Tanishq aims to be an integral part of her journey. As India\'s leading wedding jeweller, we understand the varied needs of every regional bride and that has stood as our inspiration behind creating special wedding collections catering to every community across India through Rivuah.'
+      content: 'At thessah, jewellery is not a product but a manifestation of artistry and our exquisite range of jewel pieces strike the perfect balance between traditional charm and contemporary appeal. With designs that capture the beauty and celebration of special occasions in the life of the Indian woman, thessah aims to be an integral part of her journey. As India\'s leading wedding jeweller, we understand the varied needs of every regional bride and that has stood as our inspiration behind creating special wedding collections catering to every community across India through Rivuah.'
     },
     {
       id: 3,
       title: 'Epitomizing Excellence',
-      content: 'At Tanishq, we strive to deliver excellence, consistently. We\'ve brought to the market a whole new standard of business ethics and product reliability. In the process bringing about a transformation in which jewellery is bought or sold in India. With innovations like the Karatmeter to check the purity of gold, we stand out over the customers\' hearts. Our constant endeavour is to maintain the highest standard and quality of our gold, diamonds and precious stones used in our jewel pieces. We implement extensive quality checks and only source our diamonds ethically from known, trusted and certified suppliers. At Tanishq, we also take great pride in offering an unparalleled retail experience that takes into consideration our customer\'s unique needs and preferences.'
+      content: 'At thessah, we strive to deliver excellence, consistently. We\'ve brought to the market a whole new standard of business ethics and product reliability. In the process bringing about a transformation in which jewellery is bought or sold in India. With innovations like the Karatmeter to check the purity of gold, we stand out over the customers\' hearts. Our constant endeavour is to maintain the highest standard and quality of our gold, diamonds and precious stones used in our jewel pieces. We implement extensive quality checks and only source our diamonds ethically from known, trusted and certified suppliers. At thessah, we also take great pride in offering an unparalleled retail experience that takes into consideration our customer\'s unique needs and preferences.'
     },
     {
       id: 4,
       title: 'Success Secrets',
-      content: 'Our understanding of the ethos of the current Indian jewellery market and our constant evolution along with its changing demands and preferences is why Tanishq enjoys the distinct honour of being coveted by Indian women. Furthermore, our adherence to stringent standards in terms of quality and strict and uniform guidelines across all 300+ stores have helped in establishing ourselves further as the most trusted jewellery brand in the country.'
+      content: 'Our understanding of the ethos of the current Indian jewellery market and our constant evolution along with its changing demands and preferences is why thessah enjoys the distinct honour of being coveted by Indian women. Furthermore, our adherence to stringent standards in terms of quality and strict and uniform guidelines across all 300+ stores have helped in establishing ourselves further as the most trusted jewellery brand in the country.'
     }
   ]
 
@@ -35,7 +35,7 @@ export default function AboutUsPage() {
       <div className="bg-gradient-to-b from-gray-50 to-white py-12 sm:py-16 border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif text-red-700 mb-4">
-            About Tanishq
+            About thessah
           </h1>
           <p className="text-lg text-gray-600">
             Our journey, values, and commitment to excellence
@@ -69,7 +69,7 @@ export default function AboutUsPage() {
         {/* Why Choose Us Section */}
         <div className="mt-16 sm:mt-20 pt-12 sm:pt-16 border-t border-gray-200">
           <h2 className="text-3xl sm:text-4xl font-serif text-gray-900 mb-8 text-center">
-            Why Choose Tanishq
+            Why Choose thessah
           </h2>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

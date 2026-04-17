@@ -119,10 +119,15 @@ export default function WishlistAuthed() {
   return (
     <>
       <PageTitle title="My Wishlist" />
-      <div className="max-w-7xl mx-auto px-2 py-8 grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-8 md:py-10 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_340px] gap-6 md:gap-8">
         <main>
-          <div className="bg-white rounded-xl shadow-sm border p-4 mb-4">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-[0_10px_35px_-18px_rgba(15,23,42,0.35)] border border-slate-200 p-5 md:p-6 mb-4">
+            <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
+              <h2 className="text-lg md:text-xl font-semibold text-slate-900 tracking-tight">Your Wishlist</h2>
+              <span className="text-xs md:text-sm text-slate-500">{wishlist.length} item{wishlist.length === 1 ? '' : 's'}</span>
+            </div>
+
+            <div className="flex items-center gap-3 mb-5">
               <input
                 type="checkbox"
                 checked={selected.length === wishlist.length && wishlist.length > 0}
@@ -130,35 +135,34 @@ export default function WishlistAuthed() {
                 className="accent-orange-500 w-5 h-5"
                 id="selectAllWishlist"
               />
-              <label htmlFor="selectAllWishlist" className="font-medium text-gray-800 select-none cursor-pointer">
+              <label htmlFor="selectAllWishlist" className="font-medium text-slate-800 select-none cursor-pointer">
                 Select all ({wishlist.length})
               </label>
             </div>
             {wishlist.length === 0 ? (
-              <div className="text-center py-20">
-                <HeartIcon size={60} className="mx-auto text-gray-300 mb-4" />
-                <h2 className="text-2xl font-bold">Wishlist is empty</h2>
+              <div className="text-center py-20 bg-gradient-to-b from-slate-50 to-white rounded-2xl border border-dashed border-slate-200">
+                <HeartIcon size={60} className="mx-auto text-slate-300 mb-4" />
+                <h2 className="text-2xl font-bold text-slate-900">Wishlist is empty</h2>
                 <button
                   onClick={() => router.push("/shop")}
-                  className="mt-6 bg-orange-500 text-white px-6 py-3 rounded-lg"
+                  className="mt-6 bg-orange-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-orange-600 transition"
                 >
                   Browse Products
                 </button>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="space-y-3">
                 {wishlist.map((item) => {
                   const product = getProduct(item);
                   if (!product) return null;
                   const img = product.images?.[0] || PLACEHOLDER_IMAGE;
                   const isSelected = selected.includes(product._pid);
-                  const [imgError, setImgError] = useState(false);
                   const handleSelect = (e) => { e.stopPropagation(); toggleSelect(product._pid); };
                   const handleRemove = (e) => { e.stopPropagation(); removeFromWishlist(product._pid); };
                   const handleAddToCart = (e) => { e.stopPropagation(); dispatch(addToCart({ product })); };
                   const discount = product.AED && product.AED > product.price ? Math.round(((product.AED - product.price) / product.AED) * 100) : 0;
                   return (
-                    <div key={product._pid} className="flex items-center gap-4 py-4 group hover:bg-gray-50 transition rounded-lg">
+                    <div key={product._pid} className="flex items-center gap-4 p-3 md:p-4 group rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50/70 transition">
                       <input
                         type="checkbox"
                         checked={isSelected}
@@ -166,15 +170,18 @@ export default function WishlistAuthed() {
                         className="accent-orange-500 w-5 h-5 mt-1"
                         tabIndex={0}
                       />
-                      <div className="relative w-20 h-20 flex-shrink-0">
+                      <div className="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0 rounded-lg overflow-hidden bg-white border border-slate-200 shadow-sm">
                         <Image
-                          src={imgError ? PLACEHOLDER_IMAGE : img}
+                          src={img}
                           alt={product.name}
                           fill
-                          className="object-contain rounded-lg border bg-white"
+                          className="object-cover"
                           loading="lazy"
                           priority={false}
-                          onError={() => setImgError(true)}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = PLACEHOLDER_IMAGE;
+                          }}
                         />
                         {discount > 0 && (
                           <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
@@ -183,13 +190,13 @@ export default function WishlistAuthed() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-gray-900 truncate block max-w-[180px] md:max-w-[260px]">{product.name}</span>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="font-semibold text-slate-900 truncate block max-w-[180px] md:max-w-[260px]">{product.name}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="font-bold text-lg text-gray-900">AED {product.price || 0}</span>
+                          <span className="font-bold text-xl tracking-tight text-slate-900">AED {Number(product.price || 0).toLocaleString('en-IN')}</span>
                           {product.AED && (
-                            <span className="text-xs text-gray-400 line-through">AED {product.AED}</span>
+                            <span className="text-xs text-slate-400 line-through">AED {Number(product.AED).toLocaleString('en-IN')}</span>
                           )}
                         </div>
                       </div>
@@ -202,7 +209,7 @@ export default function WishlistAuthed() {
                         </button>
                         <button
                           onClick={handleRemove}
-                          className="text-red-500 hover:underline text-xs flex items-center gap-1"
+                          className="text-red-500 hover:text-red-600 text-xs font-medium flex items-center gap-1"
                         >
                           <TrashIcon size={16} /> Remove
                         </button>
@@ -215,22 +222,22 @@ export default function WishlistAuthed() {
           </div>
         </main>
         {/* SUMMARY */}
-        <aside className="sticky top-24 bg-white border rounded-xl p-5 shadow-sm h-fit">
-          <h3 className="text-lg font-semibold mb-4">Summary</h3>
+        <aside className="sticky top-24 bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-[0_12px_35px_-20px_rgba(15,23,42,0.45)] h-fit">
+          <h3 className="text-lg font-semibold mb-4 text-slate-900">Summary</h3>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span>Selected</span>
-              <span>{selected.length}</span>
+              <span className="text-slate-600">Selected</span>
+              <span className="font-semibold text-slate-900">{selected.length}</span>
             </div>
-            <div className="flex justify-between font-bold text-lg">
-              <span>Total</span>
-              <span>AED{total.toFixed(2)}</span>
+            <div className="flex justify-between font-bold text-2xl pt-2 border-t border-slate-100">
+              <span className="text-slate-900">Total</span>
+              <span className="text-slate-900">AED {total.toFixed(2)}</span>
             </div>
           </div>
           <button
             disabled={selected.length === 0}
             onClick={addSelectedToCart}
-            className={`w-full mt-5 py-3 rounded-lg font-semibold ${selected.length === 0 ? "bg-gray-200 text-gray-400" : "bg-orange-500 text-white hover:bg-orange-600"}`}
+            className={`w-full mt-5 py-3 rounded-xl font-semibold transition ${selected.length === 0 ? "bg-slate-200 text-slate-400" : "bg-orange-500 text-white hover:bg-orange-600"}`}
           >
             {selected.length === 0 ? "Go to Checkout" : `Checkout (${selected.length})`}
           </button>

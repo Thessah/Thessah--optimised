@@ -147,7 +147,7 @@ export default function Section3Settings() {
     try {
       await axios.put('/api/store/settings', {
         section3Display: {
-          selectedCategoryIds: selectedCategories,
+          selectedCategoryIds: selectedShopCategories,
           selectedProductIds: selectedProducts,
           order: selectedProducts
         }
@@ -167,6 +167,16 @@ export default function Section3Settings() {
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <PageTitle title="Shop Categories Management" />
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 className="text-sm font-semibold text-blue-900 mb-2">Image Upload Guidelines </h3>
+          <div className="text-sm text-blue-800 space-y-1">
+            <p>Recommended image size: 1200 x 1200 px (1:1 ratio)</p>
+            <p>Supported formats: JPG, PNG, WEBP</p>
+            <p>Recommended max file size: 5 MB per image</p>
+            <p className="text-blue-700">Tip: Upload clear square images for best display on homepage cards.</p>
+          </div>
+        </div>
 
         {/* Shop Categories Heading Settings */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">

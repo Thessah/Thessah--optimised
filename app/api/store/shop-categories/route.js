@@ -1,5 +1,4 @@
 import { connectToDatabase } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
 
 // In-memory cache
 let cachedCategories = [];
@@ -7,23 +6,101 @@ let cachedHeading = {
   title: 'Find Your Perfect Match',
   subtitle: 'Shop by Categories'
 };
+let cachedPayload = null;
+let lastFetchTs = 0;
+
+const CACHE_TTL_MS = 60 * 1000; // 1 minute
 
 export async function GET(req) {
   try {
+    // Fast path: serve in-memory cache while warm
+    if (cachedPayload && Date.now() - lastFetchTs < CACHE_TTL_MS) {
+      return Response.json(cachedPayload, {
+        headers: {
+          'Cache-Control': 'public, max-age=60, stale-while-revalidate=300'
+        }
+      });
+    }
+
     try {
       const { db } = await connectToDatabase();
-      const categories = await db.collection('shopCategories')
-        .find({})
-        .sort({ order: 1, createdAt: -1 })
+
+      // Read only required fields from homepage settings
+      const settingsDoc = await db.collection('storeSettings').findOne(
+        { _id: 'homepage' },
+        {
+          projection: {
+            'data.shopCategoriesHeading': 1,
+            'data.shopCategoriesDisplay': 1
+          }
+        }
+      );
+
+      const settings = settingsDoc?.data || {};
+      const heading = {
+        title: settings?.shopCategoriesHeading?.title || 'Find Your Perfect Match',
+        subtitle: settings?.shopCategoriesHeading?.subtitle || 'Shop by Categories'
+      };
+      const selectedIds = Array.isArray(settings?.shopCategoriesDisplay?.selectedIds)
+        ? settings.shopCategoriesDisplay.selectedIds
+        : [];
+
+      // Fetch only required fields and filter in memory to avoid ID type mismatches.
+      const categories = await db.collection('categories')
+        .find({}, {
+          projection: {
+            _id: 1,
+            name: 1,
+            slug: 1,
+            image: 1,
+            parentId: 1
+          }
+        })
+        .sort({ name: 1 })
+        .limit(200)
         .toArray();
-      
-      cachedCategories = categories;
-      console.log('✓ Shop categories fetched:', categories.length);
-      
-      return Response.json({ 
+
+      const topLevelCategories = categories.filter((cat) => !cat.parentId);
+
+      const baseMapped = topLevelCategories.map((cat) => ({
+        _id: cat._id,
+        title: cat.name,
+        image: cat.image,
+        link: `/category/${cat.slug || cat._id}`,
+        isActive: true
+      }));
+
+      // Preserve admin-selected order when selected IDs are configured
+      let mappedCategories = baseMapped.slice(0, 7);
+
+      if (selectedIds.length > 0) {
+        const selectedSet = new Set(selectedIds.map((id) => String(id)));
+        const selectedPool = baseMapped.filter((cat) => selectedSet.has(String(cat._id)));
+
+        const orderedSelected = selectedIds
+          .map((id) => selectedPool.find((cat) => String(cat._id) === String(id)))
+          .filter(Boolean)
+          .slice(0, 7);
+
+        // If selected IDs are stale/mismatched, fall back to top categories instead of blank UI.
+        mappedCategories = orderedSelected.length > 0 ? orderedSelected : mappedCategories;
+      }
+
+      cachedCategories = mappedCategories;
+      cachedHeading = heading;
+      cachedPayload = {
         success: true, 
-        categories: categories || [],
-        heading: cachedHeading
+        categories: mappedCategories,
+        heading
+      };
+      lastFetchTs = Date.now();
+
+      console.log('✓ Shop categories payload built:', mappedCategories.length);
+
+      return Response.json(cachedPayload, {
+        headers: {
+          'Cache-Control': 'public, max-age=60, stale-while-revalidate=300'
+        }
       });
     } catch (dbError) {
       console.error('✗ MongoDB error:', dbError.message);

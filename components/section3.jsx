@@ -16,26 +16,35 @@ export default function TopDeals() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [{ data: sectionData }, { data: productData }, { data: settingsRes }] = await Promise.all([
-          axios.get("/api/store/home-sections"),
+        const [{ data: productData }, { data: settingsRes }] = await Promise.all([
           axios.get("/api/products"),
           axios.get("/api/store/settings")
         ]);
 
-        const adminSections = sectionData.sections || [];
         const allProducts = productData.products || productData;
 
-        const section = adminSections.find(s => s.category);
-// let result = allProducts.filter(p => p.category === "Trending Deals");
-let result = allProducts;
-        if (section && section.category) {
-          result = allProducts.filter(p => p.category === section.category);
+        const settings = settingsRes?.settings || settingsRes?.data?.settings || {}
+        const display = settings?.section3Display || {}
+        const selectedProductIds = Array.isArray(display?.selectedProductIds)
+          ? display.selectedProductIds
+          : []
+
+        let result = allProducts
+
+        if (selectedProductIds.length > 0) {
+          const productMap = new Map(
+            allProducts.map((p) => [String(p._id || p.id), p])
+          )
+
+          result = selectedProductIds
+            .map((id) => productMap.get(String(id)))
+            .filter(Boolean)
         }
 
-        setProducts(result);
+        setProducts(result)
 
-        if (settingsRes.settings?.section3Heading) {
-          setHeading(settingsRes.settings.section3Heading)
+        if (settings?.section3Heading) {
+          setHeading(settings.section3Heading)
         }
       } catch {
         setProducts([]);

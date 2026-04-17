@@ -23,7 +23,7 @@ const Footer = () => {
                 { name: "Blog", link: '/blog' },
                 { name: "Offers & Contest Details", link: '/offers' },
                 { name: "Help & FAQs", link: '/help' },
-                { name: "About Tanishq", link: '/about-us' },
+                { name: "About Thessah", link: '/about-us' },
             ]
         },
         {

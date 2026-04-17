@@ -7,7 +7,7 @@ import PageTitle from '@/components/PageTitle'
 
 export default function Section4Settings() {
   const [heading, setHeading] = useState({
-    title: 'Tanishq World',
+    title: 'Thessah World',
     subtitle: 'A companion for every occasion'
   })
   const [collections, setCollections] = useState([

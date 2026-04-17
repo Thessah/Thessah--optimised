@@ -162,7 +162,7 @@ export default function Hero({ initialSlides = [] }) {
   if (loading) {
     return (
       <section className="relative w-full bg-white py-6 sm:py-8">
-        <div className="relative h-[280px] sm:h-[350px] lg:h-[400px] overflow-hidden px-4 sm:px-8 bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center rounded-xl animate-pulse">
+        <div className="relative h-[280px] sm:h-[350px] lg:h-[400px] xl:h-[470px] 2xl:h-[540px] overflow-hidden px-4 sm:px-8 bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center rounded-xl animate-pulse">
           <div className="text-center text-gray-400">
             <div className="w-12 h-12 border-4 border-gray-300 border-t-red-600 rounded-full animate-spin mx-auto"></div>
           </div>
@@ -179,7 +179,7 @@ export default function Hero({ initialSlides = [] }) {
   return (
     <section className="relative w-full bg-white py-4 sm:py-6">
       {/* Carousel Container */}
-      <div className="relative h-[290px] sm:h-[360px] lg:h-[410px] overflow-hidden px-4 sm:px-8">
+      <div className="relative h-[290px] sm:h-[360px] lg:h-[410px] xl:h-[480px] 2xl:h-[560px] overflow-hidden px-4 sm:px-8">
         {/* Slides Track */}
         <div
           className="flex gap-4 h-full w-full cursor-grab active:cursor-grabbing"

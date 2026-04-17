@@ -5,19 +5,27 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import PageTitle from '@/components/PageTitle'
 
+const DEFAULT_EXPERIENCES = [
+  { title: 'VISIT OUR STORE', image: '', link: '/find-store' },
+  { title: 'BOOK AN APPOINTMENT', image: '', link: '/book-appointment' },
+  { title: 'TALK TO AN EXPERT', image: '', link: '/contact-expert' },
+  { title: 'DIGI GOLD', image: '', link: '/digital-gold' },
+  { title: 'BLOGS', image: '', link: '/blog' },
+  { title: 'JEWELLERY GUIDE', image: '', link: '/jewellery-guide' }
+]
+
+const normalizeExperience = (exp = {}, fallback = {}) => ({
+  title: exp.title ?? fallback.title ?? '',
+  image: exp.image || exp.imageUrl || exp.bannerImage || fallback.image || '',
+  link: exp.link ?? fallback.link ?? ''
+})
+
 export default function Section7Settings() {
   const [heading, setHeading] = useState({
-    title: 'Tanishq Experience',
+    title: 'Thessah Experience',
     subtitle: 'Find a Boutique or Book a Consultation'
   })
-  const [experiences, setExperiences] = useState([
-    { title: 'VISIT OUR STORE', image: '', link: '/find-store' },
-    { title: 'BOOK AN APPOINTMENT', image: '', link: '/book-appointment' },
-    { title: 'TALK TO AN EXPERT', image: '', link: '/contact-expert' },
-    { title: 'DIGI GOLD', image: '', link: '/digital-gold' },
-    { title: 'BLOGS', image: '', link: '/blog' },
-    { title: 'JEWELLERY GUIDE', image: '', link: '/jewellery-guide' }
-  ])
+  const [experiences, setExperiences] = useState(DEFAULT_EXPERIENCES)
   const [editingHeading, setEditingHeading] = useState(false)
   const [editingIndex, setEditingIndex] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -37,7 +45,15 @@ export default function Section7Settings() {
       }
 
       if (settingsRes.data.settings?.section7Experiences) {
-        setExperiences(settingsRes.data.settings.section7Experiences)
+        const saved = Array.isArray(settingsRes.data.settings.section7Experiences)
+          ? settingsRes.data.settings.section7Experiences
+          : []
+
+        const normalized = DEFAULT_EXPERIENCES.map((fallback, index) =>
+          normalizeExperience(saved[index], fallback)
+        )
+
+        setExperiences(normalized)
       }
     } catch (error) {
       console.error('Fetch error:', error)
@@ -76,7 +92,7 @@ export default function Section7Settings() {
 
       if (response.data.url) {
         handleExperienceChange(index, 'image', response.data.url)
-        toast.success('Image uploaded successfully')
+        toast.success('Image uploaded successfully. Click Save to persist.')
       }
     } catch (error) {
       console.error('Upload error:', error)
@@ -105,11 +121,20 @@ export default function Section7Settings() {
   }
 
   const saveExperience = async (index) => {
+    if (uploadingIndex !== null) {
+      toast.error('Please wait for image upload to finish before saving')
+      return
+    }
+
     setLoading(true)
     try {
-      console.log('💾 Saving Section 7 Experience:', experiences[index])
+      const payloadExperiences = experiences.map((exp, idx) =>
+        normalizeExperience(exp, DEFAULT_EXPERIENCES[idx] || {})
+      )
+
+      console.log('💾 Saving Section 7 Experience:', payloadExperiences[index])
       await axios.put('/api/store/settings', {
-        section7Experiences: experiences
+        section7Experiences: payloadExperiences
       })
       toast.success('Experience updated successfully')
       setEditingIndex(null)
@@ -124,7 +149,7 @@ export default function Section7Settings() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <PageTitle title="Section 7: Tanishq Experience" />
+      <PageTitle title="Section 7: Thessah Experience" />
 
       {/* Section Heading */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
@@ -151,7 +176,7 @@ export default function Section7Settings() {
                 value={heading.title}
                 onChange={(e) => handleHeadingChange('title', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Tanishq Experience"
+                placeholder="Thessah Experience"
               />
             </div>
             <div>
@@ -269,10 +294,10 @@ export default function Section7Settings() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => saveExperience(index)}
-                    disabled={loading}
+                    disabled={loading || uploadingIndex === index}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {loading ? 'Saving...' : 'Save'}
+                    {uploadingIndex === index ? 'Uploading...' : loading ? 'Saving...' : 'Save'}
                   </button>
                   <button
                     onClick={() => {

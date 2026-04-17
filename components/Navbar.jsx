@@ -436,7 +436,7 @@ const Navbar = () => {
 
           {/* Center - Search Bar */}
           <div className="hidden lg:flex items-center flex-1 justify-center px-8 max-w-3xl">
-            {/* Search Bar - Tanishq Style */}
+            {/* Search Bar - Thessah Style */}
             <form onSubmit={handleSearch} className="flex items-center w-full gap-3 bg-gray-50 px-5 py-2.5 rounded-md border border-green-200 hover:bg-gray-100 hover:border-green-300 focus-within:bg-white focus-within:border-green-400 focus-within:shadow-sm transition-all">
               <Search size={18} className="text-gray-400 flex-shrink-0" />
               <input
@@ -695,7 +695,7 @@ const Navbar = () => {
 
         {/* Bottom Navigation Bar - Dynamic from settings */}
         <div className="hidden lg:block border-t border-gray-200">
-          <div className="flex items-center justify-center gap-8 py-3">
+          <div className="flex items-center justify-start gap-8 py-3 pl-0">
             {navMenuItems.map((item, index) => {
               const isCollections = item.hasDropdown && item.name.toLowerCase().includes('collection');
 

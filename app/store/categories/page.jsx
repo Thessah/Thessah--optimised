@@ -1,10 +1,10 @@
 'use client'
 
 export const dynamic = 'force-dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/useAuth'
-import { PlusIcon, EditIcon, TrashIcon, FolderIcon, ImageIcon, XIcon } from 'lucide-react'
-import { IKImage, IKUpload } from 'imagekitio-next'
+import { PlusIcon, EditIcon, TrashIcon, FolderIcon, ImageIcon, XIcon, AlertTriangleIcon, CheckCircle2Icon } from 'lucide-react'
+import { IKUpload } from 'imagekitio-next'
 
 
 
@@ -21,7 +21,20 @@ export default function StoreCategoriesPage() {
     })
     const [uploading, setUploading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
+    const [toast, setToast] = useState(null)
+    const toastTimeoutRef = useRef(null)
     const { user, loading: authLoading, getToken } = useAuth();
+
+    const showToast = (type, title, message) => {
+        if (toastTimeoutRef.current) {
+            clearTimeout(toastTimeoutRef.current)
+        }
+
+        setToast({ type, title, message })
+        toastTimeoutRef.current = setTimeout(() => {
+            setToast(null)
+        }, 4500)
+    }
 
     // Fetch categories
     const fetchCategories = async () => {
@@ -56,6 +69,14 @@ export default function StoreCategoriesPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authLoading, user]);
 
+    useEffect(() => {
+        return () => {
+            if (toastTimeoutRef.current) {
+                clearTimeout(toastTimeoutRef.current)
+            }
+        }
+    }, [])
+
     // Handle form submit
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -69,7 +90,7 @@ export default function StoreCategoriesPage() {
             const method = editingCategory ? 'PUT' : 'POST';
             const token = await getToken(true); // Force refresh token
             if (!token) {
-                alert('Authentication failed. Please sign in again.');
+                showToast('error', 'Authentication failed', 'Please sign in again and try once more.')
                 setSubmitting(false);
                 return;
             }
@@ -85,17 +106,21 @@ export default function StoreCategoriesPage() {
             const data = await res.json();
 
             if (res.ok) {
-                alert(editingCategory ? 'Category updated!' : 'Category created!');
+                showToast(
+                    'success',
+                    editingCategory ? 'Category updated' : 'Category created',
+                    editingCategory ? 'Your changes were saved successfully.' : 'The new category is ready to use.'
+                )
                 setShowModal(false);
                 setEditingCategory(null);
                 setFormData({ name: '', description: '', image: '', parentId: '' });
                 fetchCategories();
             } else {
-                alert(data.error || 'Failed to save category');
+                showToast('error', 'Unable to save category', data.error || 'Failed to save category')
             }
         } catch (error) {
             console.error('Error saving category:', error);
-            alert('Failed to save category');
+            showToast('error', 'Unable to save category', 'Please try again in a moment.')
         } finally {
             setSubmitting(false);
         }
@@ -108,7 +133,7 @@ export default function StoreCategoriesPage() {
         try {
             const token = await getToken(true); // Force refresh token
             if (!token) {
-                alert('Authentication failed. Please sign in again.');
+                showToast('error', 'Authentication failed', 'Please sign in again and try once more.')
                 return;
             }
             const res = await fetch(`/api/store/categories/${id}`, {
@@ -119,14 +144,14 @@ export default function StoreCategoriesPage() {
             const data = await res.json();
 
             if (res.ok) {
-                alert('Category deleted!');
+                showToast('success', 'Category deleted', 'The category was removed successfully.')
                 fetchCategories();
             } else {
-                alert(data.error || 'Failed to delete category');
+                showToast('error', 'Unable to delete category', data.error || 'Failed to delete category')
             }
         } catch (error) {
             console.error('Error deleting category:', error);
-            alert('Failed to delete category');
+            showToast('error', 'Unable to delete category', 'Please try again in a moment.')
         }
     };
 
@@ -151,7 +176,7 @@ export default function StoreCategoriesPage() {
     // Handle image upload error
     const onUploadError = (err) => {
         console.error('Upload error:', err)
-        alert('Failed to upload image')
+        showToast('error', 'Image upload failed', 'Please try another image or retry the upload.')
         setUploading(false)
     }
 
@@ -168,6 +193,44 @@ export default function StoreCategoriesPage() {
 
     return (
         <div className="p-6">
+            {toast && (
+                <div className="fixed right-4 top-4 z-[60] w-[calc(100vw-2rem)] max-w-sm">
+                    <div
+                        role="alert"
+                        className={[
+                            'overflow-hidden rounded-2xl border bg-white shadow-2xl backdrop-blur-sm',
+                            toast.type === 'error'
+                                ? 'border-red-200'
+                                : 'border-emerald-200'
+                        ].join(' ')}
+                    >
+                        <div className={toast.type === 'error' ? 'h-1.5 bg-red-500' : 'h-1.5 bg-emerald-500'} />
+                        <div className="flex gap-3 p-4">
+                            <div className={[
+                                'mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+                                toast.type === 'error'
+                                    ? 'bg-red-50 text-red-600'
+                                    : 'bg-emerald-50 text-emerald-600'
+                            ].join(' ')}>
+                                {toast.type === 'error' ? <AlertTriangleIcon size={18} /> : <CheckCircle2Icon size={18} />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-gray-900">{toast.title}</p>
+                                <p className="mt-1 text-sm leading-5 text-gray-600">{toast.message}</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setToast(null)}
+                                className="rounded-lg p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                                aria-label="Dismiss notification"
+                            >
+                                <XIcon size={16} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div>
