@@ -66,7 +66,13 @@ let cachedSettings = {
     wishlist: true,
     cart: true
   },
-  footerSections: []
+  footerSections: [],
+  topBar: {
+    enabled: true,
+    text: 'Exclusive Welcome Offer: AED 199 OFF your first jewelry order & Free Shipping.',
+    buttonText: 'Apply Now',
+    buttonPath: '/'
+  }
 };
 
 console.log('✓ Settings API loaded');

@@ -22,6 +22,14 @@ export default function MenuManagement() {
   const [footerSections, setFooterSections] = useState([])
   const [hasFooterChanges, setHasFooterChanges] = useState(false)
 
+  const [topBar, setTopBar] = useState({
+    enabled: true,
+    text: '',
+    buttonText: 'Apply Now',
+    buttonPath: '/'
+  })
+  const [hasTopBarChanges, setHasTopBarChanges] = useState(false)
+
   const [categories, setCategories] = useState([])
 
   const [editingNavIndex, setEditingNavIndex] = useState(null)
@@ -36,12 +44,12 @@ export default function MenuManagement() {
 
     // Only auto-fetch if there are no unsaved changes
     const interval = setInterval(() => {
-      if (!hasNavChanges && !hasFooterChanges) {
+      if (!hasNavChanges && !hasFooterChanges && !hasTopBarChanges) {
         fetchData()
       }
     }, 30000) // keep admin view in sync
     return () => clearInterval(interval)
-  }, [hasNavChanges, hasFooterChanges])
+}, [hasNavChanges, hasFooterChanges, hasTopBarChanges])
 
   const fetchData = async () => {
     try {
@@ -74,6 +82,10 @@ export default function MenuManagement() {
 
       if (settingsRes.data.settings?.footerSections) {
         setFooterSections(settingsRes.data.settings.footerSections)
+      }
+
+      if (settingsRes.data.settings?.topBar) {
+        setTopBar(settingsRes.data.settings.topBar)
       }
 
       if (categoriesRes.data?.categories) {
@@ -357,6 +369,23 @@ export default function MenuManagement() {
     }
   }
 
+  const saveTopBar = async () => {
+    setLoading(true)
+    try {
+      const response = await axios.put('/api/store/settings', { topBar })
+      toast.success('Top bar updated')
+      setHasTopBarChanges(false)
+      if (response.data.settings?.topBar) {
+        setTopBar(response.data.settings.topBar)
+      }
+    } catch (error) {
+      console.error('Save error:', error)
+      toast.error('Failed to update top bar')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       <PageTitle title="Menu Management" />
@@ -383,6 +412,16 @@ export default function MenuManagement() {
             }`}
           >
             📄 Footer Menu
+          </button>
+          <button
+            onClick={() => setActiveTab('topbar')}
+            className={`flex-1 px-6 py-4 text-center font-semibold transition-colors ${
+              activeTab === 'topbar'
+                ? 'bg-blue-600 text-white border-b-2 border-blue-600'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            📢 Top Bar
           </button>
           <div className="px-4 py-3 flex items-center gap-3">
             {isFetching && <span className="text-sm text-gray-500">Syncing…</span>}
@@ -902,6 +941,97 @@ export default function MenuManagement() {
             </>
           )}
       </div>
+      )}
+      {activeTab === 'topbar' && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          {initialLoading ? (
+            <p className="text-sm text-gray-500">Loading…</p>
+          ) : (
+            <>
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-1">Top Announcement Bar</h3>
+                <p className="text-sm text-gray-600">The slim banner shown above the navbar. Edit the message, button label and the page it links to.</p>
+              </div>
+
+              <div className="space-y-5">
+                {/* Enable toggle */}
+                <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Show Top Bar</p>
+                    <p className="text-xs text-gray-500">Toggle visibility on the storefront</p>
+                  </div>
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={topBar.enabled}
+                      onChange={(e) => { setTopBar(p => ({ ...p, enabled: e.target.checked })); setHasTopBarChanges(true) }}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm font-medium text-gray-700">{topBar.enabled ? 'Enabled' : 'Disabled'}</span>
+                  </label>
+                </div>
+
+                {/* Text */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bar Text / Message</label>
+                  <input
+                    type="text"
+                    value={topBar.text}
+                    onChange={(e) => { setTopBar(p => ({ ...p, text: e.target.value })); setHasTopBarChanges(true) }}
+                    placeholder="e.g. Exclusive Offer: AED 199 OFF your first order!"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+
+                {/* Button text */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Button Label</label>
+                    <input
+                      type="text"
+                      value={topBar.buttonText}
+                      onChange={(e) => { setTopBar(p => ({ ...p, buttonText: e.target.value })); setHasTopBarChanges(true) }}
+                      placeholder="Apply Now"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Button Path / URL</label>
+                    <input
+                      type="text"
+                      value={topBar.buttonPath}
+                      onChange={(e) => { setTopBar(p => ({ ...p, buttonPath: e.target.value })); setHasTopBarChanges(true) }}
+                      placeholder="/collection/sale"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Preview</p>
+                  <div className="flex items-center justify-center gap-3 py-3 px-4 bg-white border border-yellow-300 rounded-xl shadow text-sm">
+                    <span className="text-yellow-500 text-lg">💎</span>
+                    <span className="text-yellow-800 font-semibold flex-1 text-center">{topBar.text || 'Your message will appear here…'}</span>
+                    {topBar.buttonText && (
+                      <span className="bg-yellow-400 text-white font-bold py-1 px-4 rounded-full text-xs">{topBar.buttonText}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <button
+                  onClick={saveTopBar}
+                  disabled={loading || !hasTopBarChanges}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {loading ? 'Saving...' : 'Save Top Bar'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       )}
     </div>
   )
