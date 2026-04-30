@@ -7,6 +7,7 @@ import { useState, useEffect } from "react"
 import { toast } from "react-hot-toast"
 import { useRouter } from "next/navigation"
 import { useEditor, EditorContent } from '@tiptap/react'
+import { createPortal } from 'react-dom'
 import StarterKit from '@tiptap/starter-kit'
 import TiptapImage from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
@@ -612,9 +613,9 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
     // Check if this is being used as a modal (when onClose is provided)
     const isModal = !!onClose
 
-    return (
-        <div className={isModal ? "fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto" : "min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4"}>
-            <div className={isModal ? "w-full max-w-4xl my-8 bg-white rounded-lg shadow-xl max-h-[90vh] overflow-y-auto" : "max-w-6xl mx-auto"}>
+    const content = (
+        <div className={isModal ? "fixed inset-0 z-[1000] isolate flex items-center justify-center bg-black/60 p-4 overflow-y-auto" : "min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4"}>
+            <div className={isModal ? "relative z-[1001] w-full max-w-4xl my-8 bg-white rounded-lg shadow-xl max-h-[90vh] overflow-y-auto" : "max-w-6xl mx-auto"}>
                 <form onSubmit={onSubmitHandler} className={isModal ? "space-y-6 p-8" : "space-y-8"}>
                     {/* Header */}
                     <div className={isModal ? "flex items-center justify-between mb-6 pb-4 border-b border-slate-200" : "flex items-center justify-between mb-8"}>
@@ -1092,17 +1093,17 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                             <span className="bg-rose-500 text-white px-3 py-1 rounded-full text-sm">5</span>
                             Jewelry Details
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <section className="space-y-3 bg-slate-50 border border-rose-100 rounded-xl p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-w-0">
+                            <section className="space-y-3 bg-slate-50 border border-rose-100 rounded-xl p-4 min-w-0 overflow-hidden">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-base font-bold text-rose-600">💎 Metal Details</h3>
                                     <button type="button" className="px-3 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md text-sm font-semibold transition" onClick={addDetailRow(setMetalDetails)}>+ Add</button>
                                 </div>
                                 <div className="space-y-2">
                                     {metalDetails.map((it, idx) => (
-                                        <div key={idx} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
-                                            <input className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Label" value={it.label} onChange={(e)=>updateDetail(setMetalDetails)(idx,'label', e.target.value)} />
-                                            <input className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Value" value={it.value} onChange={(e)=>updateDetail(setMetalDetails)(idx,'value', e.target.value)} />
+                                        <div key={idx} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 items-center min-w-0">
+                                            <input className="w-full min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Label" value={it.label} onChange={(e)=>updateDetail(setMetalDetails)(idx,'label', e.target.value)} />
+                                            <input className="w-full min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Value" value={it.value} onChange={(e)=>updateDetail(setMetalDetails)(idx,'value', e.target.value)} />
                                             <button type="button" className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition" onClick={()=>removeDetailRow(setMetalDetails)(idx)}>✕</button>
                                         </div>
                                     ))}
@@ -1111,16 +1112,16 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                     )}
                                 </div>
                             </section>
-                            <section className="space-y-3 bg-slate-50 border border-rose-100 rounded-xl p-4">
+                            <section className="space-y-3 bg-slate-50 border border-rose-100 rounded-xl p-4 min-w-0 overflow-hidden">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-base font-bold text-rose-600">✨ General Details</h3>
                                     <button type="button" className="px-3 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md text-sm font-semibold transition" onClick={addDetailRow(setGeneralDetails)}>+ Add</button>
                                 </div>
                                 <div className="space-y-2">
                                     {generalDetails.map((it, idx) => (
-                                        <div key={idx} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
-                                            <input className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Label" value={it.label} onChange={(e)=>updateDetail(setGeneralDetails)(idx,'label', e.target.value)} />
-                                            <input className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Value" value={it.value} onChange={(e)=>updateDetail(setGeneralDetails)(idx,'value', e.target.value)} />
+                                        <div key={idx} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 items-center min-w-0">
+                                            <input className="w-full min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Label" value={it.label} onChange={(e)=>updateDetail(setGeneralDetails)(idx,'label', e.target.value)} />
+                                            <input className="w-full min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-200 transition" placeholder="Value" value={it.value} onChange={(e)=>updateDetail(setGeneralDetails)(idx,'value', e.target.value)} />
                                             <button type="button" className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition" onClick={()=>removeDetailRow(setGeneralDetails)(idx)}>✕</button>
                                         </div>
                                     ))}
@@ -1350,4 +1351,10 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
             </div>
         </div>
     )
+
+    if (isModal && typeof document !== 'undefined') {
+        return createPortal(content, document.body)
+    }
+
+    return content
 }

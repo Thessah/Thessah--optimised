@@ -115,6 +115,14 @@ const ProductDetails = ({ product, reviews = [] }) => {
   });
   const [calculatedPrice, setCalculatedPrice] = useState(null);
   const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
+  const numericEffPrice = Number(effPrice);
+  const numericEffAED = Number(effAED);
+  const numericCalculatedPrice = Number(calculatedPrice);
+  const displayPrice = [numericEffPrice, numericEffAED, numericCalculatedPrice].find(
+    (value) => Number.isFinite(value) && value > 0
+  ) || null;
+  const showHeaderPrice = displayPrice !== null;
+  const showHeaderStrikePrice = numericEffAED > 0 && numericEffPrice > 0 && numericEffAED > numericEffPrice;
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -395,13 +403,15 @@ const ProductDetails = ({ product, reviews = [] }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="text-center space-y-3">
           <h1 className="text-3xl md:text-4xl font-serif font-semibold text-gray-900">{product.name}</h1>
-          <div className="flex items-center justify-center gap-3 text-gray-900">
-            <span className="text-3xl md:text-4xl font-bold">{currency === 'AED' ? 'AED' : currency}</span>
-            <span className="text-3xl md:text-4xl font-bold">{formatMoney(effPrice || effAED || calculatedPrice || 0)}</span>
-            {effAED && effAED > effPrice && (
-              <span className="text-lg text-gray-500 line-through">{formatMoney(effAED)}</span>
-            )}
-          </div>
+          {showHeaderPrice && (
+            <div className="flex items-center justify-center gap-3 text-gray-900">
+              <span className="text-3xl md:text-4xl font-bold">{currency === 'AED' ? 'AED' : currency}</span>
+              <span className="text-3xl md:text-4xl font-bold">{formatMoney(displayPrice)}</span>
+              {showHeaderStrikePrice && (
+                <span className="text-lg text-gray-500 line-through">{formatMoney(numericEffAED)}</span>
+              )}
+            </div>
+          )}
           {calculatedPrice && !effPrice && (
             <div className="text-sm text-orange-600 font-semibold animate-pulse">✨ Auto-calculated from live gold rate</div>
           )}

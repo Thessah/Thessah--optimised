@@ -32,6 +32,14 @@ const ProductSchema = new mongoose.Schema({
   stoneWeight: { type: Number, default: 0 }, // in carats
   stonePrice: { type: Number, default: 0 },
   makingCharges: { type: Number, default: 0 },
+  metalDetails: {
+    type: [{ label: { type: String, default: '' }, value: { type: String, default: '' } }],
+    default: [],
+  },
+  generalDetails: {
+    type: [{ label: { type: String, default: '' }, value: { type: String, default: '' } }],
+    default: [],
+  },
 }, { timestamps: true });
 
 // Add indexes for better query performance

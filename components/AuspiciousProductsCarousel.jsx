@@ -20,7 +20,7 @@ const getImageSrc = (product) => {
 
 const formatPrice = (value) => {
   const n = Number(value)
-  if (!Number.isFinite(n)) return null
+  if (!Number.isFinite(n) || n <= 0) return null
   return `AED ${Math.round(n)}`
 }
 
@@ -212,7 +212,9 @@ export default function AuspiciousProductsCarousel() {
           ) : (
             products.map((product) => {
               const productName = product.name || product.title || 'Product'
-              const priceText = formatPrice(product.price || product.AED)
+              const salePrice = Number(product.price)
+              const listPrice = Number(product.AED)
+              const priceText = formatPrice(salePrice > 0 ? salePrice : listPrice)
 
               return (
                 <Link

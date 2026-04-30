@@ -128,10 +128,22 @@ export default function ProductBySlug() {
         setProduct(found);
         // Get related products from Redux if available
         if (found && products.length > 0) {
-            const related = products
-                .filter(p => p.slug !== slug && p.category === found.category && p.inStock)
-                .slice(0, 5);
-            setRelatedProducts(related);
+            const uniqueRelated = [];
+            const seen = new Set();
+
+            for (const p of products) {
+                const isRelated = p.slug !== slug && p.category === found.category && p.inStock;
+                if (!isRelated) continue;
+
+                const key = p._id || p.id || p.slug;
+                if (!key || seen.has(key)) continue;
+
+                seen.add(key);
+                uniqueRelated.push(p);
+                if (uniqueRelated.length === 5) break;
+            }
+
+            setRelatedProducts(uniqueRelated);
         } else {
             setRelatedProducts([]);
         }
@@ -202,8 +214,8 @@ export default function ProductBySlug() {
                             <div className="px-4 mt-12 mb-16">
                                 <h2 className="text-2xl font-semibold text-slate-800 mb-6">Related Products</h2>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-5 xl:grid-cols-5 gap-6">
-                                    {relatedProducts.map((prod) => (
-                                        <ProductCard key={prod.id} product={prod} />
+                                    {relatedProducts.map((prod, index) => (
+                                        <ProductCard key={`${prod._id || prod.id || prod.slug || "related"}-${index}`} product={prod} />
                                     ))}
                                 </div>
                             </div>

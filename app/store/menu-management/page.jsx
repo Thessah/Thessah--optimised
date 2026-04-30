@@ -29,6 +29,7 @@ export default function MenuManagement() {
   const [editingFooterLinkIndex, setEditingFooterLinkIndex] = useState(null)
   const [loading, setLoading] = useState(false)
   const [uploadingNavIconIndex, setUploadingNavIconIndex] = useState(null)
+  const [uploadingMegaImageIndex, setUploadingMegaImageIndex] = useState(null) // `${itemIdx}-${imgIdx}`
 
   useEffect(() => {
     fetchData()
@@ -166,6 +167,80 @@ export default function MenuManagement() {
     setNavMenuItems(updated)
     setHasNavChanges(true)
     toast.success('Menu item deleted')
+  }
+
+  // ── Mega-menu helpers ───────────────────────────────────────────
+  const getMegaMenu = (item) => item.megaMenu || { links: [], images: [] }
+
+  const handleMegaLinkChange = (itemIdx, linkIdx, field, value) => {
+    const updated = [...navMenuItems]
+    const mm = { ...getMegaMenu(updated[itemIdx]) }
+    mm.links = [...(mm.links || [])]
+    mm.links[linkIdx] = { ...mm.links[linkIdx], [field]: value }
+    updated[itemIdx] = { ...updated[itemIdx], megaMenu: mm }
+    setNavMenuItems(updated)
+    setHasNavChanges(true)
+  }
+
+  const addMegaLink = (itemIdx) => {
+    const updated = [...navMenuItems]
+    const mm = { ...getMegaMenu(updated[itemIdx]) }
+    mm.links = [...(mm.links || []), { name: '', link: '' }]
+    updated[itemIdx] = { ...updated[itemIdx], megaMenu: mm }
+    setNavMenuItems(updated)
+    setHasNavChanges(true)
+  }
+
+  const removeMegaLink = (itemIdx, linkIdx) => {
+    const updated = [...navMenuItems]
+    const mm = { ...getMegaMenu(updated[itemIdx]) }
+    mm.links = (mm.links || []).filter((_, i) => i !== linkIdx)
+    updated[itemIdx] = { ...updated[itemIdx], megaMenu: mm }
+    setNavMenuItems(updated)
+    setHasNavChanges(true)
+  }
+
+  const handleMegaImageChange = (itemIdx, imgIdx, field, value) => {
+    const updated = [...navMenuItems]
+    const mm = { ...getMegaMenu(updated[itemIdx]) }
+    mm.images = [...(mm.images || [])]
+    mm.images[imgIdx] = { ...(mm.images[imgIdx] || {}), [field]: value }
+    updated[itemIdx] = { ...updated[itemIdx], megaMenu: mm }
+    setNavMenuItems(updated)
+    setHasNavChanges(true)
+  }
+
+  const handleMegaImageUpload = async (itemIdx, imgIdx, file) => {
+    if (!file) return
+    const key = `${itemIdx}-${imgIdx}`
+    setUploadingMegaImageIndex(key)
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      const res = await axios.post('/api/store/upload-banner', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      if (res.data?.url) {
+        handleMegaImageChange(itemIdx, imgIdx, 'url', res.data.url)
+        toast.success('Image uploaded')
+      } else {
+        toast.error('Upload failed')
+      }
+    } catch {
+      toast.error('Upload failed')
+    } finally {
+      setUploadingMegaImageIndex(null)
+    }
+  }
+
+  const handleMegaLinkCategorySelect = (itemIdx, linkIdx, categoryId) => {
+    const cat = categories.find((c) => c._id === categoryId)
+    if (!cat) return
+    const linkUrl = `/category/${cat.slug || cat._id}`
+    handleMegaLinkChange(itemIdx, linkIdx, 'link', linkUrl)
+    if (!navMenuItems[itemIdx]?.megaMenu?.links?.[linkIdx]?.name) {
+      handleMegaLinkChange(itemIdx, linkIdx, 'name', cat.name)
+    }
   }
 
   const addFooterLink = (sectionIndex) => {
@@ -506,8 +581,150 @@ export default function MenuManagement() {
                       onChange={(e) => handleNavItemChange(index, 'hasDropdown', e.target.checked)}
                       className="w-4 h-4"
                     />
-                    <label className="text-sm text-gray-700">Has Dropdown Menu</label>
+                    <label className="text-sm text-gray-700">Has Mega Dropdown</label>
                   </div>
+
+                  {/* ── Mega-menu editor ─────────────────────────────── */}
+                  {item.hasDropdown && (
+                    <div className="mt-3 border border-blue-200 bg-blue-50 rounded-lg p-4 space-y-4">
+                      <p className="text-sm font-semibold text-blue-800">Mega Dropdown Configuration</p>
+
+                      {/* Dropdown links */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm font-medium text-gray-700">Dropdown Links</p>
+                          <button
+                            type="button"
+                            onClick={() => addMegaLink(index)}
+                            className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                          >+ Add Link</button>
+                        </div>
+                        <div className="flex items-center gap-3 mb-3">
+                          <p className="text-xs text-gray-600 shrink-0">Link columns:</p>
+                          {[1, 2, 3].map((col) => (
+                            <button
+                              key={col}
+                              type="button"
+                              onClick={() => {
+                                const updated = [...navMenuItems]
+                                const mm = { ...getMegaMenu(updated[index]) }
+                                mm.linkColumns = col
+                                updated[index] = { ...updated[index], megaMenu: mm }
+                                setNavMenuItems(updated)
+                                setHasNavChanges(true)
+                              }}
+                              className={`px-3 py-1 text-xs rounded border font-medium transition ${
+                                (getMegaMenu(item).linkColumns || 1) === col
+                                  ? 'bg-blue-600 text-white border-blue-600'
+                                  : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                              }`}
+                            >{col} col{col > 1 ? 's' : ''}</button>
+                          ))}
+                        </div>
+                        <div className="space-y-2">
+                          {(getMegaMenu(item).links || []).map((lnk, li) => (
+                            <div key={li} className="flex gap-2 items-center bg-white rounded border border-gray-200 p-2">
+                              <input
+                                type="text"
+                                placeholder="Label"
+                                value={lnk.name || ''}
+                                onChange={(e) => handleMegaLinkChange(index, li, 'name', e.target.value)}
+                                className="flex-1 min-w-0 px-2 py-1 text-sm border border-gray-300 rounded"
+                              />
+                              <input
+                                type="text"
+                                placeholder="URL  e.g. /category/gold"
+                                value={lnk.link || ''}
+                                onChange={(e) => handleMegaLinkChange(index, li, 'link', e.target.value)}
+                                className="flex-1 min-w-0 px-2 py-1 text-sm border border-gray-300 rounded"
+                              />
+                              {categories.length > 0 && (
+                                <select
+                                  defaultValue=""
+                                  onChange={(e) => handleMegaLinkCategorySelect(index, li, e.target.value)}
+                                  className="px-2 py-1 text-xs border border-gray-300 rounded"
+                                >
+                                  <option value="">From category…</option>
+                                  {categories.map((cat) => (
+                                    <option key={cat._id} value={cat._id}>{cat.name}</option>
+                                  ))}
+                                </select>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeMegaLink(index, li)}
+                                className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 shrink-0"
+                              >✕</button>
+                            </div>
+                          ))}
+                          {(getMegaMenu(item).links || []).length === 0 && (
+                            <p className="text-xs text-gray-400 italic">No links yet. Click "+ Add Link".</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Featured images (up to 3) */}
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">Featured Images (up to 3)</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {[0, 1, 2].map((imgIdx) => {
+                            const img = getMegaMenu(item).images?.[imgIdx] || {}
+                            const uploading = uploadingMegaImageIndex === `${index}-${imgIdx}`
+                            return (
+                              <div key={imgIdx} className="bg-white border border-gray-200 rounded-lg p-2 space-y-2">
+                                <p className="text-xs font-medium text-gray-500">Image {imgIdx + 1}</p>
+                                {img.url && (
+                                  <img src={img.url} alt="" className="w-full h-24 object-cover rounded" />
+                                )}
+                                <label className="block w-full cursor-pointer">
+                                  <span className="block w-full text-center text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded border border-dashed border-gray-300">
+                                    {uploading ? 'Uploading…' : img.url ? 'Replace image' : 'Upload image'}
+                                  </span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => handleMegaImageUpload(index, imgIdx, e.target.files?.[0])}
+                                  />
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="Label (e.g. Gold Rings)"
+                                  value={img.label || ''}
+                                  onChange={(e) => handleMegaImageChange(index, imgIdx, 'label', e.target.value)}
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Link URL"
+                                  value={img.link || ''}
+                                  onChange={(e) => handleMegaImageChange(index, imgIdx, 'link', e.target.value)}
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                                />
+                                {categories.length > 0 && (
+                                  <select
+                                    defaultValue=""
+                                    onChange={(e) => {
+                                      const cat = categories.find(c => c._id === e.target.value)
+                                      if (!cat) return
+                                      handleMegaImageChange(index, imgIdx, 'link', `/category/${cat.slug || cat._id}`)
+                                      if (!img.label) handleMegaImageChange(index, imgIdx, 'label', cat.name)
+                                    }}
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                                  >
+                                    <option value="">Set link from category…</option>
+                                    {categories.map((cat) => (
+                                      <option key={cat._id} value={cat._id}>{cat.name}</option>
+                                    ))}
+                                  </select>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => deleteNavMenuItem(index)}

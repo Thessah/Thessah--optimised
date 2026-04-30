@@ -63,7 +63,9 @@ const ProductCard = ({ product }) => {
         toast.success('Added to cart')
     }
 
-    const showPrice = Number(product.price) > 0 || Number(product.AED) > 0;
+    const showCurrentPrice = Number(product.price) > 0;
+    const showOriginalPrice = Number(product.AED) > 0 && Number(product.AED) > Number(product.price);
+    const showPriceBlock = showCurrentPrice || showOriginalPrice;
 
     return (
         <Link href={`/product/${product.slug}`} className="group w-full block">
@@ -148,13 +150,15 @@ const ProductCard = ({ product }) => {
                         <span className="text-xs font-medium text-slate-500">({ratingCount})</span>
                     </div>
                     {/* Price */}
-                    {showPrice && (
+                    {showPriceBlock && (
                         <div className="flex items-end gap-2">
-                            <span className="inline-flex items-end gap-1.5">
-                                <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">{currency}</span>
-                                <span className="text-[33px] leading-none font-bold text-slate-900">{Number(product.price).toLocaleString('en-IN')}</span>
-                            </span>
-                            {Number(product.AED) > 0 && Number(product.AED) > Number(product.price) && (
+                            {showCurrentPrice && (
+                                <span className="inline-flex items-end gap-1.5">
+                                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">{currency}</span>
+                                    <span className="text-[33px] leading-none font-bold text-slate-900">{Number(product.price).toLocaleString('en-IN')}</span>
+                                </span>
+                            )}
+                            {showOriginalPrice && (
                                 <span className="text-xs font-medium text-slate-400 line-through pb-1">
                                     {currency} {Number(product.AED).toLocaleString('en-IN')}
                                 </span>

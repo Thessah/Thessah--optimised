@@ -94,9 +94,11 @@ export default function TopDeals() {
                     <p className="text-[10px] sm:text-[15px] font-medium mt-1 sm:mt-2 truncate">
                       {item.name}
                     </p>
-                    <p className="font-bold text-[9px] sm:text-[16px] mt-0.5 sm:mt-1">
-                      From AED{item.price}
-                    </p>
+                    {Number(item.price) > 0 && (
+                      <p className="font-bold text-[9px] sm:text-[16px] mt-0.5 sm:mt-1">
+                        From AED{item.price}
+                      </p>
+                    )}
                   </a>
                 );
               })}

@@ -18,6 +18,102 @@ import Logo from "../assets/logo/logo.png";
 import Truck from '../assets/delivery.png';
 import SignInModal from './SignInModal';
 
+// ── MegaDropdown panel ────────────────────────────────────────────────────────
+function MegaDropdown({ item, featuredImages, dropdownLinks, onClose, timerRef }) {
+  const cols = item.megaMenu?.linkColumns || 1;
+  const hasLinks = dropdownLinks.length > 0;
+  const hasImages = featuredImages.length > 0;
+  const colClass = cols === 3 ? 'grid-cols-3' : cols === 2 ? 'grid-cols-2' : 'grid-cols-1';
+
+  return (
+    <div
+      className="absolute top-full left-0 right-0 mt-0 z-[200] overflow-hidden bg-white"
+      style={{
+        boxShadow: '0 16px 48px -8px rgba(0,0,0,0.16), 0 4px 16px -4px rgba(0,0,0,0.08)',
+        borderTop: '2px solid #008C6D',
+      }}
+      onMouseEnter={() => { if (timerRef?.current) clearTimeout(timerRef.current); }}
+      onMouseLeave={() => { if (timerRef?.current) clearTimeout(timerRef.current); timerRef.current = setTimeout(onClose, 180); }}
+    >
+      <div className="flex">
+        {/* Links section */}
+        {hasLinks && (
+          <div className="flex-1 p-6">
+            {item.name && (
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-4">{item.name}</p>
+            )}
+            <div className={`grid ${colClass} gap-3`}>
+              {dropdownLinks.map((lnk, li) => (
+                <Link
+                  key={li}
+                  href={lnk.link || '#'}
+                  className="group relative flex items-center gap-3 p-3 rounded-lg border border-transparent transition-all duration-200 hover:-translate-y-px"
+                  style={{ '--hover-bg': '#f0faf7' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#b2ddd4'; e.currentTarget.style.backgroundColor = '#f0faf7'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.backgroundColor = ''; }}
+                  onClick={onClose}
+                >
+                  {/* Brand accent bar */}
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-0 group-hover:h-[60%] rounded-r-full transition-all duration-250 ease-out" style={{ backgroundColor: '#008C6D' }} />
+                  <span className="text-sm font-medium text-gray-700 transition-colors duration-200 pl-1 group-hover:[color:#008C6D]">
+                    {lnk.name}
+                  </span>
+                </Link>
+              ))}
+            </div>
+            {item.link && item.link !== '#' && (
+              <div className="mt-5 pt-4 border-t border-gray-100">
+                <Link
+                  href={item.link}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold transition-colors"
+                  style={{ color: '#008C6D' }}
+                  onClick={onClose}
+                >
+                  View all {item.name}
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Featured images section */}
+        {hasImages && (
+          <div className={`flex gap-4 p-5 shrink-0 ${hasLinks ? 'border-l border-gray-100 bg-gray-50/60' : 'flex-1 justify-center'}`}>
+            {featuredImages.map((img, ii) => (
+              <Link
+                key={ii}
+                href={img.link || '#'}
+                className="group relative rounded-xl overflow-hidden shrink-0 block"
+                style={{
+                  width: featuredImages.length === 1 ? 260 : featuredImages.length === 2 ? 200 : 160,
+                  height: 190,
+                }}
+                onClick={onClose}
+              >
+                <img
+                  src={img.url}
+                  alt={img.label || ''}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                {img.label && (
+                  <div className="absolute bottom-0 left-0 right-0 px-3 py-3">
+                    <p className="text-white text-xs font-semibold leading-tight">{img.label}</p>
+                    <p className="text-white/70 text-[10px] mt-0.5 group-hover:text-white transition-colors">Shop now →</p>
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const Navbar = () => {
   // State for image search modal
   const [showImageSearch, setShowImageSearch] = useState(false);
@@ -62,6 +158,8 @@ const Navbar = () => {
   const [supportDropdownOpen, setSupportDropdownOpen] = useState(false);
   const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState(null);
+  const [openMegaIndex, setOpenMegaIndex] = useState(null);
+  const megaTimer = useRef(null);
   const hoverTimer = useRef(null);
   const categoryTimer = useRef(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -763,9 +861,9 @@ const Navbar = () => {
 
         {/* Bottom Navigation Bar - Dynamic from settings */}
         {navMenuEnabled && navMenuItems.length > 0 && (
-        <div className="hidden lg:block border-t border-gray-200 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
-          <div className="mx-auto max-w-[1320px] px-4">
-            <div className="flex items-center justify-between gap-1 py-2">
+        <div className="hidden lg:block border-t border-gray-200 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-visible">
+          <div className="mx-auto max-w-[1320px] px-4 overflow-visible">
+          <div className="relative flex items-center justify-between gap-1 py-2">
             {navMenuItems.map((item, index) => {
               const isCollections = item.hasDropdown && item.name.toLowerCase().includes('collection');
 
@@ -786,12 +884,12 @@ const Navbar = () => {
                       }, 200);
                     }}
                   >
-                    <button className="text-[13px] font-medium text-gray-700 hover:text-red-600 transition inline-flex items-center gap-1.5 hover:underline underline-offset-[10px] decoration-[1.5px] decoration-red-500 whitespace-nowrap">
+                    <button className="text-[14px] font-medium text-gray-700 hover:text-red-600 transition inline-flex items-center gap-2 hover:underline underline-offset-[10px] decoration-[1.5px] decoration-red-500 whitespace-nowrap">
                       {item.icon && (
                         <img
                           src={item.icon}
                           alt=""
-                          className="w-4 h-4 object-contain opacity-80"
+                          className="w-5 h-5 object-contain opacity-80"
                           aria-hidden="true"
                         />
                       )}
@@ -867,18 +965,68 @@ const Navbar = () => {
                 );
               }
 
-  
+              // Generic mega-menu (non-collection items with hasDropdown + megaMenu data)
+              if (item.hasDropdown && item.megaMenu) {
+                const mm = item.megaMenu;
+                const featuredImages = (mm.images || []).filter((img) => img?.url);
+                const dropdownLinks = mm.links || [];
+                const hasContent = dropdownLinks.length > 0 || featuredImages.length > 0;
+
+                // If no content configured yet, fall through to a plain link
+                if (!hasContent) {
+                  return (
+                    <Link
+                      key={index}
+                      href={item.link || '#'}
+                      className="flex-1 justify-center text-[13px] font-medium text-gray-700 hover:text-red-600 transition inline-flex items-center gap-1.5 hover:underline underline-offset-[10px] decoration-[1.5px] decoration-red-500 whitespace-nowrap"
+                    >
+                      {item.icon && (
+                        <img src={item.icon} alt="" className="w-4 h-4 object-contain opacity-80" aria-hidden="true" />
+                      )}
+                      {item.name}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <div
+                    key={index}
+                    className="flex-1 flex justify-center relative"
+                    onMouseEnter={() => {
+                      if (megaTimer.current) clearTimeout(megaTimer.current);
+                      setOpenMegaIndex(index);
+                    }}
+                    onMouseLeave={() => {
+                      if (megaTimer.current) clearTimeout(megaTimer.current);
+                      megaTimer.current = setTimeout(() => setOpenMegaIndex(null), 180);
+                    }}
+                  >
+                    <button className="text-[14px] font-medium text-gray-700 hover:text-red-600 transition inline-flex items-center gap-2 hover:underline underline-offset-[10px] decoration-[1.5px] decoration-red-500 whitespace-nowrap">
+                      {item.icon && (
+                        <img src={item.icon} alt="" className="w-5 h-5 object-contain opacity-80" aria-hidden="true" />
+                      )}
+                      {item.name}
+                      <svg className={`w-4 h-4 transition-transform ${openMegaIndex === index ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {openMegaIndex === index && null}
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={index}
                   href={item.link || '#'}
-                  className="flex-1 justify-center text-[13px] font-medium text-gray-700 hover:text-red-600 transition inline-flex items-center gap-1.5 hover:underline underline-offset-[10px] decoration-[1.5px] decoration-red-500 whitespace-nowrap"
+                  className="flex-1 justify-center text-[14px] font-medium text-gray-700 hover:text-red-600 transition inline-flex items-center gap-2 hover:underline underline-offset-[10px] decoration-[1.5px] decoration-red-500 whitespace-nowrap"
                 >
                   {item.icon && (
                     <img
                       src={item.icon}
                       alt=""
-                      className="w-4 h-4 object-contain opacity-80"
+                      className="w-5 h-5 object-contain opacity-80"
                       aria-hidden="true"
                     />
                   )}
@@ -886,6 +1034,25 @@ const Navbar = () => {
                 </Link>
               );
             })}
+
+            {/* Single full-width mega dropdown rendered outside the map */}
+            {(() => {
+              const activeItem = openMegaIndex !== null ? navMenuItems[openMegaIndex] : null;
+              if (!activeItem || !activeItem.megaMenu) return null;
+              const mm = activeItem.megaMenu;
+              const featuredImages = (mm.images || []).filter(img => img?.url);
+              const dropdownLinks = mm.links || [];
+              if (dropdownLinks.length === 0 && featuredImages.length === 0) return null;
+              return (
+                <MegaDropdown
+                  item={activeItem}
+                  featuredImages={featuredImages}
+                  dropdownLinks={dropdownLinks}
+                  onClose={() => setOpenMegaIndex(null)}
+                  timerRef={megaTimer}
+                />
+              );
+            })()}
             </div>
           </div>
         </div>

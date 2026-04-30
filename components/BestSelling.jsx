@@ -50,6 +50,7 @@ const ProductCard = ({ product }) => {
   // Split price into integer and decimal
   const [intPrice, decPrice] = (product.price?.toFixed(2) || '0.00').split('.')
   const [intOrig, decOrig] = product.AED?.toFixed(2).split('.') || ['0', '00']
+  const showCurrentPrice = Number(product.price) > 0
 
   const productName = product.name || product.title || 'Untitled Product'
 
@@ -140,11 +141,13 @@ const ProductCard = ({ product }) => {
         <div className="mt-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {/* Current Price */}
-            <p className="text-black font-bold text-base flex items-baseline">
-              <span className="mr-1">AED</span>
-              <span>{intPrice}</span>
-              <span className="text-xs align-top ml-0.5">.{decPrice}</span>
-            </p>
+            {showCurrentPrice && (
+              <p className="text-black font-bold text-base flex items-baseline">
+                <span className="mr-1">AED</span>
+                <span>{intPrice}</span>
+                <span className="text-xs align-top ml-0.5">.{decPrice}</span>
+              </p>
+            )}
 
             {/* Original Price */}
             {product.AED && product.AED > product.price && (
