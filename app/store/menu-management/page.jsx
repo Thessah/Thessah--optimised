@@ -24,6 +24,7 @@ export default function MenuManagement() {
 
   const [topBar, setTopBar] = useState({
     enabled: true,
+    icon: '💎',
     text: '',
     buttonText: 'Apply Now',
     buttonPath: '/'
@@ -971,16 +972,28 @@ export default function MenuManagement() {
                   </label>
                 </div>
 
-                {/* Text */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bar Text / Message</label>
-                  <input
-                    type="text"
-                    value={topBar.text}
-                    onChange={(e) => { setTopBar(p => ({ ...p, text: e.target.value })); setHasTopBarChanges(true) }}
-                    placeholder="e.g. Exclusive Offer: AED 199 OFF your first order!"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
+                {/* Icon + Text */}
+                <div className="grid grid-cols-[120px_1fr] gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Icon / Emoji</label>
+                    <input
+                      type="text"
+                      value={topBar.icon}
+                      onChange={(e) => { setTopBar(p => ({ ...p, icon: e.target.value })); setHasTopBarChanges(true) }}
+                      placeholder="💎"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm text-center"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Bar Text / Message</label>
+                    <input
+                      type="text"
+                      value={topBar.text}
+                      onChange={(e) => { setTopBar(p => ({ ...p, text: e.target.value })); setHasTopBarChanges(true) }}
+                      placeholder="e.g. Exclusive Offer: AED 199 OFF your first order!"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
                 </div>
 
                 {/* Button text */}
@@ -1011,7 +1024,7 @@ export default function MenuManagement() {
                 <div>
                   <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Preview</p>
                   <div className="flex items-center justify-center gap-3 py-3 px-4 bg-white border border-yellow-300 rounded-xl shadow text-sm">
-                    <span className="text-yellow-500 text-lg">💎</span>
+                    {topBar.icon && <span className="text-yellow-500 text-lg">{topBar.icon}</span>}
                     <span className="text-yellow-800 font-semibold flex-1 text-center">{topBar.text || 'Your message will appear here…'}</span>
                     {topBar.buttonText && (
                       <span className="bg-yellow-400 text-white font-bold py-1 px-4 rounded-full text-xs">{topBar.buttonText}</span>

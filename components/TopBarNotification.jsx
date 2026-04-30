@@ -25,7 +25,7 @@ const TopBarNotification = () => {
 
   return (
     <div className="relative flex items-center justify-center py-3 px-6 bg-white border border-yellow-300 rounded-xl shadow-lg mx-2 mt-3 mb-2">
-      <span className="mr-3 text-2xl text-yellow-500 drop-shadow">💎</span>
+      {config.icon && <span className="mr-3 text-2xl text-yellow-500 drop-shadow">{config.icon}</span>}
       <span className="font-serif font-semibold text-sm md:text-base text-yellow-800 text-center flex-1">
         {config.text}
       </span>
