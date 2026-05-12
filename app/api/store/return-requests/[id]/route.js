@@ -2,36 +2,20 @@ import connectDB from '@/lib/mongodb';
 import ReturnRequest from '@/models/ReturnRequest';
 import Store from '@/models/Store';
 import { NextResponse } from "next/server";
-import admin from 'firebase-admin';
+import { requireFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 // Update return/replacement request status
 export async function PUT(request, { params }) {
     try {
         await connectDB();
 
-        // Initialize Firebase Admin if not already initialized
-        if (!admin.apps.length) {
-            admin.initializeApp({
-                credential: admin.credential.cert({
-                    projectId: process.env.FIREBASE_PROJECT_ID,
-                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-                })
-            });
-        }
-
-        const authHeader = request.headers.get('authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-        const idToken = authHeader.split('Bearer ')[1];
-        let decodedToken;
+        let userId;
         try {
-            decodedToken = await admin.auth().verifyIdToken(idToken);
+            const user = await requireFirebaseAuth(request);
+            userId = user.uid;
         } catch (err) {
             return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
         }
-        const userId = decodedToken.uid;
 
         if (!userId) {
             return NextResponse.json({ error: "not authorized" }, { status: 401 });

@@ -1,6 +1,7 @@
 import dbConnect from "@/lib/mongodb";
 import Product from "@/models/Product";
 import authSeller from "@/middlewares/authSeller";
+import { optionalFirebaseAuth } from "@/lib/firebase-auth-helper";
 
 import { NextResponse } from "next/server";
 
@@ -8,23 +9,8 @@ import { NextResponse } from "next/server";
 
 export async function POST(request){
     try {
-        // Firebase Auth: Extract token from Authorization header
-        const authHeader = request.headers.get('authorization');
-        let userId = null;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const idToken = authHeader.split('Bearer ')[1];
-            const { getAuth } = await import('firebase-admin/auth');
-            const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-            if (getApps().length === 0) {
-                initializeApp({ credential: applicationDefault() });
-            }
-            try {
-                const decodedToken = await getAuth().verifyIdToken(idToken);
-                userId = decodedToken.uid;
-            } catch (e) {
-                // Not signed in, userId remains null
-            }
-        }
+        const user = await optionalFirebaseAuth(request);
+        const userId = user?.uid || null;
         const { productId } = await request.json()
         if (!userId) {
             return NextResponse.json({ error: 'not authorized' }, { status: 401 });

@@ -1,6 +1,7 @@
 import dbConnect from "@/lib/mongodb";
 import ShippingSetting from "@/models/ShippingSetting";
 import authSeller from "@/middlewares/authSeller";
+import { requireFirebaseAuth } from "@/lib/firebase-auth-helper";
 
 import { NextResponse } from "next/server";
 
@@ -52,24 +53,7 @@ export async function GET(request) {
 // PUT: Seller only - update or create singleton settings
 export async function PUT(request) {
   try {
-    // Extract userId from Firebase token in Authorization header
-    const authHeader = request.headers.get("authorization");
-    let userId = null;
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const idToken = authHeader.split(" ")[1];
-      const { getAuth } = await import("firebase-admin/auth");
-      const { initializeApp, applicationDefault, getApps } = await import("firebase-admin/app");
-      if (getApps().length === 0) {
-        initializeApp({ credential: applicationDefault() });
-      }
-      try {
-        const decodedToken = await getAuth().verifyIdToken(idToken);
-        userId = decodedToken.uid;
-      } catch (e) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-    }
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { uid: userId } = await requireFirebaseAuth(request);
 
     const storeId = await authSeller(userId);
     if (!storeId) return NextResponse.json({ error: "not authorized" }, { status: 401 });

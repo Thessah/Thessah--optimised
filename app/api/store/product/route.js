@@ -5,7 +5,7 @@ import connectDB from '@/lib/mongodb';
 import Product from '@/models/Product';
 import authSeller from "@/middlewares/authSeller";
 import { NextResponse } from "next/server";
-import { getAuth } from '@/lib/firebase-admin';
+import { requireFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 // Helper: Upload images to ImageKit
 const uploadImages = async (images) => {
@@ -35,31 +35,8 @@ export async function POST(request) {
         await connectDB();
 
         // Firebase Auth: Extract token from Authorization header
-        const authHeader = request.headers.get('authorization');
-        console.log('[CREATE PRODUCT] Auth header present:', !!authHeader);
-        
-        let userId = null;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const idToken = authHeader.split('Bearer ')[1];
-            console.log('[CREATE PRODUCT] Token extracted:', idToken.substring(0, 20) + '...');
-            
-            const { getAuth } = await import('firebase-admin/auth');
-            const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-            if (getApps().length === 0) {
-                initializeApp({ credential: applicationDefault() });
-            }
-            try {
-                const decodedToken = await getAuth().verifyIdToken(idToken);
-                userId = decodedToken.uid;
-                console.log('[CREATE PRODUCT] User ID from token:', userId);
-            } catch (e) {
-                console.error('[CREATE PRODUCT] Token verification failed:', e.message);
-                return NextResponse.json({ error: 'Invalid authentication token' }, { status: 401 });
-            }
-        } else {
-            console.log('[CREATE PRODUCT] No valid authorization header');
-            return NextResponse.json({ error: 'Missing authorization token' }, { status: 401 });
-        }
+        const { uid: userId } = await requireFirebaseAuth(request);
+        console.log('[CREATE PRODUCT] User ID from token:', userId);
         
         const storeId = await authSeller(userId);
         console.log('[CREATE PRODUCT] Store ID from authSeller:', storeId);

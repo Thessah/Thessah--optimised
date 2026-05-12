@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import Rating from '@/models/Rating';
 import Order from '@/models/Order';
 import User from '@/models/User';
+import { optionalFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 
 // POST: Customer adds a review with images
@@ -11,22 +12,8 @@ export async function POST(request) {
         await connectDB();
         
         // Firebase Auth
-        const authHeader = request.headers.get('authorization');
-        let userId = null;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const idToken = authHeader.split('Bearer ')[1];
-            const { getAuth } = await import('firebase-admin/auth');
-            const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-            if (getApps().length === 0) {
-                initializeApp({ credential: applicationDefault() });
-            }
-            try {
-                const decodedToken = await getAuth().verifyIdToken(idToken);
-                userId = decodedToken.uid;
-            } catch (e) {
-                userId = null;
-            }
-        }
+        const user = await optionalFirebaseAuth(request);
+        const userId = user?.uid || null;
 
         if (!userId) {
             return Response.json({ error: "Unauthorized" }, { status: 401 });

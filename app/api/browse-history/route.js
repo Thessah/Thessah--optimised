@@ -2,32 +2,20 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import BrowseHistory from '@/models/BrowseHistory';
 import Product from '@/models/Product';
-import admin from 'firebase-admin';
-
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    })
-  });
-}
+import { requireFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 // GET - Fetch user's browse history
 export async function GET(request) {
   try {
     await connectDB();
 
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    let userId;
+    try {
+      const user = await requireFirebaseAuth(request);
+      userId = user.uid;
+    } catch (err) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const idToken = authHeader.split('Bearer ')[1];
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const userId = decodedToken.uid;
 
     // Get browse history for user (last 50 items)
     const history = await BrowseHistory.find({ userId })
@@ -65,14 +53,13 @@ export async function POST(request) {
   try {
     await connectDB();
 
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    let userId;
+    try {
+      const user = await requireFirebaseAuth(request);
+      userId = user.uid;
+    } catch (err) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const idToken = authHeader.split('Bearer ')[1];
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const userId = decodedToken.uid;
 
     const { productId } = await request.json();
 

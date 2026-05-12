@@ -4,30 +4,14 @@ import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import Order from '@/models/Order';
 import AbandonedCart from '@/models/AbandonedCart';
+import { requireFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 // Get individual customer details with full order history
 export async function GET(request, { params }) {
     try {
         await connectDB();
         
-        // Firebase Auth
-        const authHeader = request.headers.get("authorization");
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-        const idToken = authHeader.split(" ")[1];
-        const { getAuth } = await import('firebase-admin/auth');
-        const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-        if (getApps().length === 0) {
-            initializeApp({ credential: applicationDefault() });
-        }
-        let decodedToken;
-        try {
-            decodedToken = await getAuth().verifyIdToken(idToken);
-        } catch (e) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-        const userId = decodedToken.uid;
+        const { uid: userId } = await requireFirebaseAuth(request);
         const storeId = await authSeller(userId);
         const { customerId } = await params;
 

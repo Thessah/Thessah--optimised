@@ -2,6 +2,7 @@ import authSeller from "@/middlewares/authSeller";
 import connectDB from '@/lib/mongodb';
 import Rating from '@/models/Rating';
 import Product from '@/models/Product';
+import { optionalFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 
 // POST: Approve or reject a review
@@ -10,22 +11,8 @@ export async function POST(request) {
         await connectDB();
         
         // Firebase Auth
-        const authHeader = request.headers.get('authorization');
-        let userId = null;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const idToken = authHeader.split('Bearer ')[1];
-            const { getAuth } = await import('firebase-admin/auth');
-            const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-            if (getApps().length === 0) {
-                initializeApp({ credential: applicationDefault() });
-            }
-            try {
-                const decodedToken = await getAuth().verifyIdToken(idToken);
-                userId = decodedToken.uid;
-            } catch (e) {
-                userId = null;
-            }
-        }
+        const user = await optionalFirebaseAuth(request);
+        const userId = user?.uid || null;
 
         const storeId = await authSeller(userId);
         if (!storeId) {

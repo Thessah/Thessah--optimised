@@ -1,30 +1,14 @@
 import { NextResponse } from "next/server";
 import connectDB from '@/lib/mongodb';
 import Category from '@/models/Category';
+import { requireFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 // PUT - Update a category
 export async function PUT(req, { params }) {
     try {
         await connectDB();
         
-        // Firebase Auth: get Bearer token from header
-        const authHeader = req.headers.get("authorization");
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-        const idToken = authHeader.split(" ")[1];
-        const { getAuth } = await import('firebase-admin/auth');
-        const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-        if (getApps().length === 0) {
-            initializeApp({ credential: applicationDefault() });
-        }
-        let decodedToken;
-        try {
-            decodedToken = await getAuth().verifyIdToken(idToken);
-        } catch (e) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-        const userId = decodedToken.uid;
+        await requireFirebaseAuth(req);
 
         const { id } = await params;
         const { name, description, image, parentId } = await req.json();
@@ -75,24 +59,7 @@ export async function DELETE(req, { params }) {
     try {
         await connectDB();
         
-        // Firebase Auth: get Bearer token from header
-        const authHeader = req.headers.get("authorization");
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-        const idToken = authHeader.split(" ")[1];
-        const { getAuth } = await import('firebase-admin/auth');
-        const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-        if (getApps().length === 0) {
-            initializeApp({ credential: applicationDefault() });
-        }
-        let decodedToken;
-        try {
-            decodedToken = await getAuth().verifyIdToken(idToken);
-        } catch (e) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-        const userId = decodedToken.uid;
+        await requireFirebaseAuth(req);
 
         const { id } = await params;
 

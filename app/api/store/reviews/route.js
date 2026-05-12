@@ -4,6 +4,7 @@ import connectDB from '../../../../lib/mongodb';
 import Product from '../../../../models/Product';
 import Rating from '../../../../models/Rating';
 import User from '../../../../models/User';
+import { requireFirebaseAuth } from '../../../../lib/firebase-auth-helper';
 
 
 // GET: Fetch all reviews for store's products
@@ -11,23 +12,13 @@ export async function GET(request) {
     try {
         await connectDB();
         
-        const authHeader = request.headers.get('authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-        const idToken = authHeader.split('Bearer ')[1];
-        const { getAuth } = await import('firebase-admin/auth');
-        const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-        if (getApps().length === 0) {
-            initializeApp({ credential: applicationDefault() });
-        }
-        let decodedToken;
+        let userId;
         try {
-            decodedToken = await getAuth().verifyIdToken(idToken);
+            const user = await requireFirebaseAuth(request);
+            userId = user.uid;
         } catch (err) {
             return Response.json({ error: 'Invalid or expired token' }, { status: 401 });
         }
-        const userId = decodedToken.uid;
 
         const storeId = await authSeller(userId);
         if (!storeId) {
@@ -79,23 +70,13 @@ export async function POST(request) {
     try {
         await connectDB();
         
-        const authHeader = request.headers.get('authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-        const idToken = authHeader.split('Bearer ')[1];
-        const { getAuth } = await import('firebase-admin/auth');
-        const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-        if (getApps().length === 0) {
-            initializeApp({ credential: applicationDefault() });
-        }
-        let decodedToken;
+        let userId;
         try {
-            decodedToken = await getAuth().verifyIdToken(idToken);
+            const user = await requireFirebaseAuth(request);
+            userId = user.uid;
         } catch (err) {
             return Response.json({ error: 'Invalid or expired token' }, { status: 401 });
         }
-        const userId = decodedToken.uid;
 
         const storeId = await authSeller(userId);
         if (!storeId) {

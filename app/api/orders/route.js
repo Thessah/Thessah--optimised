@@ -11,6 +11,7 @@ import Store from '@/models/Store';
 import Coupon from '@/models/Coupon';
 import GuestUser from '@/models/GuestUser';
 import { sendOrderConfirmationEmail } from '@/lib/email';
+import { optionalFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 const PaymentMethod = {
     COD: 'COD',
@@ -35,27 +36,14 @@ export async function POST(request) {
 
         // Auth for logged-in user - ONLY if explicitly NOT a guest
         if (isGuest !== true) {
-            const authHeader = request.headers.get('authorization');
-            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            const user = await optionalFirebaseAuth(request);
+            if (!user) {
                 return NextResponse.json({ 
                     error: 'Authentication required for non-guest orders',
                 }, { status: 401 });
             }
-            const idToken = authHeader.split('Bearer ')[1];
-            try {
-                const { getAuth } = await import('firebase-admin/auth');
-                const { initializeApp, cert, getApps } = await import('firebase-admin/app');
-                if (getApps().length === 0) {
-                    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}');
-                    initializeApp({ credential: cert(serviceAccount) });
-                }
-                const decodedToken = await getAuth().verifyIdToken(idToken);
-                userId = decodedToken.uid;
-                isPlusMember = decodedToken.plan === 'plus';
-            } catch (err) {
-                console.error('Token verification error:', err?.message || err);
-                return NextResponse.json({ error: 'Token verification failed' }, { status: 401 });
-            }
+            userId = user.uid;
+            isPlusMember = user.customClaims?.plan === 'plus';
         }
 
         // Validation

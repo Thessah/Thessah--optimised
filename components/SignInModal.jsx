@@ -4,7 +4,7 @@ import { auth, googleProvider } from '../lib/firebase';
 import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import Image from 'next/image';
 import GoogleIcon from '../assets/google.png';
-import LeftImage from '../assets/collection/floral-bloom-desktop.webp';
+import LeftImage from '../assets/popup/imagepop.png';
 import axios from 'axios';
 
 const SignInModal = ({ open, onClose }) => {
@@ -158,11 +158,6 @@ const SignInModal = ({ open, onClose }) => {
               className="object-cover opacity-90"
               priority
             />
-            <div className="absolute inset-0 bg-[#008C6D]/70" />
-            <div className="absolute inset-0 p-8 flex flex-col justify-end text-white">
-              <h3 className="text-2xl font-bold">New Scheduling And Routing Options</h3>
-              <p className="text-white/90 mt-2 text-sm">We updated the flow and added new options for better control.</p>
-            </div>
           </div>
 
           {/* Right form panel */}

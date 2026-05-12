@@ -1,32 +1,11 @@
 import dbConnect from "@/lib/mongodb";
 import Product from "@/models/Product";
 import authSeller from "@/middlewares/authSeller";
+import { requireFirebaseAuth } from "@/lib/firebase-auth-helper";
 
 export async function POST(request) {
   try {
-    const authHeader = request.headers.get("authorization");
-    let userId = null;
-
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const idToken = authHeader.split(" ")[1];
-      const { getAuth } = await import("firebase-admin/auth");
-      const { initializeApp, applicationDefault, getApps } = await import("firebase-admin/app");
-
-      if (getApps().length === 0) {
-        initializeApp({ credential: applicationDefault() });
-      }
-
-      try {
-        const decodedToken = await getAuth().verifyIdToken(idToken);
-        userId = decodedToken.uid;
-      } catch (e) {
-        return Response.json({ error: "Unauthorized" }, { status: 401 });
-      }
-    }
-
-    if (!userId) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { uid: userId } = await requireFirebaseAuth(request);
 
     const storeId = await authSeller(userId);
     if (!storeId) {

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import connectDB from '@/lib/mongodb';
 import ReturnRequest from '@/models/ReturnRequest';
 import Order from '@/models/Order';
+import { optionalFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 // Get user's return requests
 export async function GET(request) {
@@ -10,22 +11,8 @@ export async function GET(request) {
         await connectDB();
         
         // Firebase Auth
-        const authHeader = request.headers.get('authorization');
-        let userId = null;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const idToken = authHeader.split('Bearer ')[1];
-            const { getAuth } = await import('firebase-admin/auth');
-            const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-            if (getApps().length === 0) {
-                initializeApp({ credential: applicationDefault() });
-            }
-            try {
-                const decodedToken = await getAuth().verifyIdToken(idToken);
-                userId = decodedToken.uid;
-            } catch (e) {
-                userId = null;
-            }
-        }
+        const user = await optionalFirebaseAuth(request);
+        const userId = user?.uid || null;
 
         if (!userId) {
             return NextResponse.json({ error: "not authorized" }, { status: 401 });
@@ -52,22 +39,8 @@ export async function POST(request) {
         await connectDB();
         
         // Firebase Auth
-        const authHeader = request.headers.get('authorization');
-        let userId = null;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const idToken = authHeader.split('Bearer ')[1];
-            const { getAuth } = await import('firebase-admin/auth');
-            const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-            if (getApps().length === 0) {
-                initializeApp({ credential: applicationDefault() });
-            }
-            try {
-                const decodedToken = await getAuth().verifyIdToken(idToken);
-                userId = decodedToken.uid;
-            } catch (e) {
-                userId = null;
-            }
-        }
+        const user = await optionalFirebaseAuth(request);
+        const userId = user?.uid || null;
 
         if (!userId) {
             return NextResponse.json({ error: "not authorized" }, { status: 401 });

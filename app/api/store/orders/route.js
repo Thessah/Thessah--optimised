@@ -5,6 +5,7 @@ import Order from '@/models/Order';
 import Product from '@/models/Product';
 import User from '@/models/User';
 import Address from '@/models/Address';
+import { requireFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 // Debug log helper
 function debugLog(...args) {
@@ -18,24 +19,7 @@ export async function POST(request) {
     try {
         await connectDB();
         
-        // Firebase Auth: Extract token from Authorization header
-        const authHeader = request.headers.get('authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-        const idToken = authHeader.split('Bearer ')[1];
-        const { getAuth } = await import('firebase-admin/auth');
-        const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-        if (getApps().length === 0) {
-            initializeApp({ credential: applicationDefault() });
-        }
-        let decodedToken;
-        try {
-            decodedToken = await getAuth().verifyIdToken(idToken);
-        } catch (e) {
-            return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-        }
-        const userId = decodedToken.uid;
+        const { uid: userId } = await requireFirebaseAuth(request);
         const storeId = await authSeller(userId)
         if(!storeId){
             return NextResponse.json({ error: 'not authorized' }, { status: 401 })
@@ -61,24 +45,7 @@ export async function GET(request){
     try {
         await connectDB();
         
-        // Firebase Auth: Extract token from Authorization header
-        const authHeader = request.headers.get('authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-        const idToken = authHeader.split('Bearer ')[1];
-        const { getAuth } = await import('firebase-admin/auth');
-        const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-        if (getApps().length === 0) {
-            initializeApp({ credential: applicationDefault() });
-        }
-        let decodedToken;
-        try {
-            decodedToken = await getAuth().verifyIdToken(idToken);
-        } catch (e) {
-            return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-        }
-        const userId = decodedToken.uid;
+        const { uid: userId } = await requireFirebaseAuth(request);
         debugLog('userId from Firebase:', userId);
         const storeId = await authSeller(userId)
         debugLog('storeId from authSeller:', storeId);

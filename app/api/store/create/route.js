@@ -3,6 +3,7 @@ import imagekit from "@/configs/imageKit";
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import Store from '@/models/Store';
+import { requireFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 // Ensure Node.js runtime so Buffer and ImageKit work (avoids Edge runtime errors)
 export const runtime = 'nodejs';
@@ -17,40 +18,7 @@ export async function POST(request) {
     await connectDB();
     
     // Firebase Auth: Extract token from Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return json({ error: 'Unauthorized' }, 401);
-    }
-    const idToken = authHeader.split('Bearer ')[1];
-    
-    const { getAuth } = await import('firebase-admin/auth');
-    const { initializeApp, cert, getApps } = await import('firebase-admin/app');
-    
-    if (getApps().length === 0) {
-      try {
-        const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-        if (!serviceAccountKey) {
-          console.error('Firebase configuration missing');
-          return json({ error: 'Firebase configuration missing' }, 500);
-        }
-        const serviceAccount = JSON.parse(serviceAccountKey);
-        
-        initializeApp({
-          credential: cert(serviceAccount)
-        });
-      } catch (initError) {
-        console.error('Firebase initialization error:', initError);
-        return json({ error: 'Firebase initialization failed', details: initError.message }, 500);
-      }
-    }
-    
-    let decodedToken;
-    try {
-      decodedToken = await getAuth().verifyIdToken(idToken);
-    } catch (e) {
-      console.error('Token verification error:', e?.message || e);
-      return json({ error: 'Invalid token' }, 401);
-    }
+    const decodedToken = await requireFirebaseAuth(request);
     const userId = decodedToken.uid;
     const userEmail = decodedToken.email || '';
     const userName = decodedToken.name || 'Unknown';

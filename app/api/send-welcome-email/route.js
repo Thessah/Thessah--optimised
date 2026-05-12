@@ -17,21 +17,15 @@ export async function POST(request) {
     
     // Verify Firebase token
     const { getAuth } = await import('firebase-admin/auth');
-    const { initializeApp, cert, getApps } = await import('firebase-admin/app');
+    const { requireFirebaseAuth } = await import('@/lib/firebase-auth-helper');
     
-    if (getApps().length === 0) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}');
-      initializeApp({ credential: cert(serviceAccount) });
-    }
-
-    let decodedToken;
+    let userId;
     try {
-      decodedToken = await getAuth().verifyIdToken(idToken);
+      const user = await requireFirebaseAuth(request);
+      userId = user.uid;
     } catch (e) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
-
-    const userId = decodedToken.uid;
     const { email, name } = await request.json();
 
     if (!email) {

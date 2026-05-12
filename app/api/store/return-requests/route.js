@@ -4,36 +4,20 @@ import Store from '@/models/Store';
 import ReturnRequest from '@/models/ReturnRequest';
 import User from '@/models/User';
 import { NextResponse } from "next/server";
-import admin from 'firebase-admin';
+import { requireFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 // Get store's return/replacement requests
 export async function GET(request) {
     try {
         await connectDB();
 
-        // Initialize Firebase Admin if not already initialized
-        if (!admin.apps.length) {
-            admin.initializeApp({
-                credential: admin.credential.cert({
-                    projectId: process.env.FIREBASE_PROJECT_ID,
-                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-                })
-            });
-        }
-
-        const authHeader = request.headers.get('authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-        const idToken = authHeader.split('Bearer ')[1];
-        let decodedToken;
+        let userId;
         try {
-            decodedToken = await admin.auth().verifyIdToken(idToken);
+            const user = await requireFirebaseAuth(request);
+            userId = user.uid;
         } catch (err) {
             return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
         }
-        const userId = decodedToken.uid;
 
         // Verify user has a store
         const store = await Store.findOne({ userId }).lean();

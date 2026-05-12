@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import connectDB from '@/lib/mongodb';
 import Order from '@/models/Order';
 import User from '@/models/User';
+import { requireFirebaseAuth } from '@/lib/firebase-auth-helper';
 
 // Update order status and tracking details
 export async function PUT(request, { params }) {
