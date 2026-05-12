@@ -10,11 +10,41 @@ import { useAuth } from '@/lib/useAuth'
 export default function MobileBottomNav() {
   const [hydrated, setHydrated] = React.useState(false)
   const [showMobileMenu, setShowMobileMenu] = React.useState(false)
+  const [buyNowGlobalEnabled, setBuyNowGlobalEnabled] = React.useState(true)
   React.useEffect(() => { setHydrated(true) }, []);
   const pathname = usePathname()
   const cartCount = useSelector((state) => state.cart.total)
   const { user, loading: authLoading } = useAuth();
   const isSignedIn = !!user;
+
+  // Fetch Buy Now global setting
+  React.useEffect(() => {
+    const fetchBuyNowSetting = async () => {
+      try {
+        const cached = localStorage.getItem('buyNowGlobalEnabled');
+        if (cached === 'false') setBuyNowGlobalEnabled(false);
+        if (cached === 'true') setBuyNowGlobalEnabled(true);
+
+        const response = await fetch('/api/store/settings', { cache: 'no-store' });
+        if (response.ok) {
+          const data = await response.json();
+          setBuyNowGlobalEnabled(data?.settings?.buyNowGlobalEnabled !== false);
+        }
+      } catch (error) {
+        const cached = localStorage.getItem('buyNowGlobalEnabled');
+        setBuyNowGlobalEnabled(cached !== 'false');
+      }
+    };
+    fetchBuyNowSetting();
+
+    const handleGlobalBuyNowChange = (event) => {
+      if (typeof event?.detail?.enabled === 'boolean') {
+        setBuyNowGlobalEnabled(event.detail.enabled);
+      }
+    };
+    window.addEventListener('globalBuyNowSettingUpdated', handleGlobalBuyNowChange);
+    return () => window.removeEventListener('globalBuyNowSettingUpdated', handleGlobalBuyNowChange);
+  }, []);
 
   // Don't show on product pages (will have separate fixed bar)
   if (pathname?.includes('/product/')) {
@@ -24,59 +54,45 @@ export default function MobileBottomNav() {
   const navItems = [
     { href: '/', icon: Home, label: 'Home' },
     { href: '/categories', icon: LayoutGrid, label: 'Categories' },
-    { href: '/cart', icon: ShoppingCart, label: 'Cart', badge: cartCount },
+    ...(buyNowGlobalEnabled ? [{ href: '/cart', icon: ShoppingCart, label: 'Cart', badge: cartCount }] : []),
     { type: 'menu', icon: Menu, label: 'Menu' },
   ]
 
   return (
     <>
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-50 safe-area-bottom">
-        <div className="flex items-stretch justify-around">
-          {navItems.map((item, idx) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href
-            
-            if (item.type === 'menu') {
-              return (
-                <button
-                  key="menu"
-                  onClick={() => setShowMobileMenu(true)}
-                  className="flex-1 flex flex-col items-center justify-center py-2.5 transition-colors relative text-gray-500 hover:text-gray-900"
-                >
-                  <div className="relative mb-1">
-                    <Icon size={22} strokeWidth={2} />
-                  </div>
-                  <span className="text-[11px] leading-tight font-normal">
-                    {item.label}
-                  </span>
-                </button>
-              )
-            }
-            
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex-1 flex flex-col items-center justify-center py-2.5 transition-colors relative ${
-                  isActive 
-                    ? 'text-gray-900' 
-                    : 'text-gray-500'
-                }`}
-              >
-                <div className="relative mb-1">
-                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                  {hydrated && item.badge > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
-                      {item.badge > 99 ? '99+' : item.badge}
-                    </span>
-                  )}
-                </div>
-                <span className={`text-[11px] leading-tight ${isActive ? 'font-medium' : 'font-normal'}`}>
-                  {item.label}
+      {/* Modern Floating Mobile Navbar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 safe-area-bottom" style={{background: 'linear-gradient(180deg, #2874f0 90%, #fff 100%)'}}>
+        <div className="flex items-center justify-between px-4 py-2 relative">
+          {/* Left: Back/Home */}
+          <Link href="/" className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow text-blue-700">
+            <Home size={22} />
+          </Link>
+
+          {/* Center: Floating Search Bar */}
+          <form className="flex-1 flex justify-center absolute left-0 right-0 mx-auto" style={{pointerEvents: 'none'}}>
+            <div className="flex items-center w-[90vw] max-w-xs mx-auto bg-white rounded-full shadow-lg px-4 py-2 border border-gray-200" style={{pointerEvents: 'auto'}}>
+              <Search size={18} className="text-gray-400 mr-2" />
+              <input
+                type="text"
+                placeholder="Search for products..."
+                className="w-full bg-transparent outline-none placeholder-gray-400 text-gray-700 text-sm"
+                style={{pointerEvents: 'auto'}}
+                // Optionally: handle search logic here
+              />
+            </div>
+          </form>
+
+          {/* Right: Cart */}
+          {buyNowGlobalEnabled && (
+            <Link href="/cart" className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow text-blue-700 relative">
+              <ShoppingCart size={22} />
+              {hydrated && cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                  {cartCount > 99 ? '99+' : cartCount}
                 </span>
-              </Link>
-            )
-          })}
+              )}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -140,7 +156,7 @@ export default function MobileBottomNav() {
                     className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 rounded-lg transition text-gray-700"
                   >
                     <ShoppingCart size={18} />
-                    <span className="font-medium">My Orders</span>
+                    <span className="font-medium">{buyNowGlobalEnabled ? 'My Orders' : 'My Enquiry'}</span>
                   </Link>
                   <Link
                     href="/browse-history"

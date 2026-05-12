@@ -5,10 +5,25 @@ import { usePathname } from 'next/navigation'
 import { signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { useAuth } from '@/lib/useAuth'
+import { useEffect, useState } from 'react'
+import axios from 'axios'
 
 export default function DashboardSidebar() {
   const pathname = usePathname()
   const { user } = useAuth()
+  const [buyNowGlobalEnabled, setBuyNowGlobalEnabled] = useState(true)
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const { data } = await axios.get('/api/store/settings')
+        setBuyNowGlobalEnabled(data?.settings?.buyNowGlobalEnabled !== false)
+      } catch {
+        setBuyNowGlobalEnabled(true)
+      }
+    }
+    loadSettings()
+  }, [])
 
   const handleLogout = async () => {
     if (user) {
@@ -19,7 +34,7 @@ export default function DashboardSidebar() {
 
   const menuItems = [
     { label: 'Profile', href: '/dashboard/profile' },
-    { label: 'Orders', href: '/dashboard/orders' },
+    { label: buyNowGlobalEnabled ? 'Orders' : 'Enquiries', href: '/dashboard/orders' },
     { label: 'Wishlist', href: '/dashboard/wishlist' },
     { label: 'Browse History', href: '/browse-history' },
     { label: 'Addresses', href: '/dashboard/profile#addresses' },

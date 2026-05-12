@@ -45,7 +45,7 @@ export default function HelpContactPage() {
               <span className="text-[#008C6D] text-xl">✉️</span>
             </div>
             <h3 className="font-semibold text-slate-900">Write to Us</h3>
-            <p className="text-sm text-slate-600 mt-1">support@quickfynd.com</p>
+            <p className="text-sm text-slate-600 mt-1">support@Thessah.ae</p>
           </div>
         </div>
         <p className="text-center text-xs text-slate-500 mb-12">The toll-free number applies to domestic orders within India. For international customers or deliveries please reach us via WhatsApp, Live chat or email.</p>

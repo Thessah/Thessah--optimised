@@ -6,7 +6,7 @@ import Link from 'next/link'
 import axios from 'axios'
 import { useSelector } from 'react-redux'
 import ProductCard from '@/components/ProductCard'
-import { FilterIcon, XIcon } from 'lucide-react'
+import { FilterIcon, XIcon, ChevronDownIcon } from 'lucide-react'
 
 const slugify = (value = '') =>
   value
@@ -39,6 +39,7 @@ export default function CategoryPage() {
   const [filters, setFilters] = useState({ priceRange: [0, 100000], categories: [] })
   const [sortBy, setSortBy] = useState('newest')
   const [showFilters, setShowFilters] = useState(false)
+  const [showSortMenu, setShowSortMenu] = useState(false)
 
   const reduxMatchedProducts = useMemo(
     () => products.filter((product) => matchesCategorySlug(product, normalizedSlug)),
@@ -129,141 +130,186 @@ export default function CategoryPage() {
   }, [products, normalizedSlug, fetchedProducts, filters, sortBy])
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-      {/* Breadcrumb */}
-      <nav className="flex items-center text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
-        <ol className="inline-flex items-center space-x-1">
-          <li>
-            <Link href="/" className="hover:text-gray-900">Home</Link>
-          </li>
-          <li className="text-gray-400">/</li>
-          <li className="text-gray-900 font-medium" aria-current="page">{categoryTitle || 'Category'}</li>
-        </ol>
-      </nav>
+    <div className="bg-gradient-to-b from-gray-50 to-white min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Breadcrumb */}
+        <nav className="flex items-center text-sm text-gray-500 mb-8" aria-label="Breadcrumb">
+          <ol className="inline-flex items-center gap-2">
+            <li>
+              <Link href="/" className="hover:text-gray-900 transition font-medium">Home</Link>
+            </li>
+            <li className="text-gray-300">/</li>
+            <li className="text-gray-900 font-semibold" aria-current="page">{categoryTitle || 'Category'}</li>
+          </ol>
+        </nav>
 
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-serif text-gray-900">{categoryTitle}</h1>
-          <p className="text-sm text-gray-500 mt-1">{filteredProducts.length} item{filteredProducts.length === 1 ? '' : 's'}</p>
+        <div className="mb-12">
+          <h1 className="text-5xl md:text-6xl font-serif text-gray-900 mb-2">{categoryTitle}</h1>
+          <p className="text-lg text-gray-500 font-light">{filteredProducts.length} item{filteredProducts.length === 1 ? '' : 's'} available</p>
         </div>
-      </div>
 
-      {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        {/* Filter Toggle */}
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-2 border px-4 py-2 rounded hover:bg-gray-50 transition ${
-            showFilters ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-300'
-          }`}
-        >
-          <FilterIcon size={18} />
-          Filter
-        </button>
+        {/* Filter Bar */}
+        <div className="flex flex-wrap items-center gap-3 mb-8 pb-6 border-b border-gray-200">
+          {/* Filter Toggle */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 border border-gray-300 px-4 py-2.5 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-all font-medium text-gray-700 shadow-sm hover:shadow-md"
+          >
+            <FilterIcon size={18} />
+            <span>Filter</span>
+          </button>
 
         {/* Price Filter Chip */}
         {(filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (
           <button
             onClick={() => setFilters(prev => ({ ...prev, priceRange: [0, 100000] }))}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50"
+            className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm transition-colors font-medium"
           >
-            <span>₹{filters.priceRange[0].toLocaleString('en-IN')} - ₹{filters.priceRange[1].toLocaleString('en-IN')}</span>
-            <XIcon size={14} />
+            <span>AED {filters.priceRange[0].toLocaleString()} - AED {filters.priceRange[1].toLocaleString()}</span>
+            <XIcon size={14} className="text-gray-500" />
           </button>
         )}
 
-        {/* Sort Dropdown */}
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-sm text-gray-600">Sort By:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm bg-white"
+        {/* Sort Dropdown - Modern Design */}
+        <div className="ml-auto relative">
+          <button
+            onClick={() => setShowSortMenu(!showSortMenu)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-xl hover:border-gray-400 hover:bg-gray-50 transition-all text-sm font-medium text-gray-700 shadow-sm"
           >
-            <option value="newest">Best Matches</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-          </select>
+            <span className="text-gray-500">Sort By</span>
+            <span className="text-gray-900 font-semibold min-w-[130px] text-left">
+              {sortBy === 'newest' && 'Best Matches'}
+              {sortBy === 'price-low' && 'Price: Low to High'}
+              {sortBy === 'price-high' && 'Price: High to Low'}
+            </span>
+            <ChevronDownIcon size={16} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Dropdown Menu */}
+          {showSortMenu && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setShowSortMenu(false)}></div>
+              <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-40 overflow-hidden p-1">
+                {[
+                  { value: 'newest', label: 'Best Matches' },
+                  { value: 'price-low', label: 'Price: Low to High' },
+                  { value: 'price-high', label: 'Price: High to Low' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setSortBy(option.value)
+                      setShowSortMenu(false)
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors font-medium ${
+                      sortBy === option.value
+                        ? 'bg-amber-50 text-amber-900'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-            <button
-              onClick={() => setShowFilters(false)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <XIcon size={20} />
-            </button>
-          </div>
+        <>
+          {/* Backdrop */}
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowFilters(false)}></div>
+          
+          {/* Filter Modal - Simplified Tanishq Style */}
+          <div className="fixed inset-y-0 left-0 w-full sm:w-80 bg-white z-50 overflow-y-auto shadow-lg">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XIcon size={24} />
+              </button>
+            </div>
 
-          {/* Price Range Filter */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Price Range
-            </label>
-            <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                <input
-                  type="number"
-                  placeholder="Min"
-                  value={filters.priceRange[0]}
-                  onChange={(e) => setFilters(prev => ({
-                    ...prev,
-                    priceRange: [parseInt(e.target.value) || 0, prev.priceRange[1]]
-                  }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-                <span className="text-gray-500">to</span>
-                <input
-                  type="number"
-                  placeholder="Max"
-                  value={filters.priceRange[1]}
-                  onChange={(e) => setFilters(prev => ({
-                    ...prev,
-                    priceRange: [prev.priceRange[0], parseInt(e.target.value) || 100000]
-                  }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+            <div className="p-6 space-y-6">
+              {/* Price Range Filter */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 mb-4">Price Range</h4>
+                <div className="space-y-4">
+                  {/* Input Fields */}
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={filters.priceRange[0]}
+                      onChange={(e) => setFilters(prev => ({
+                        ...prev,
+                        priceRange: [parseInt(e.target.value) || 0, prev.priceRange[1]]
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                    />
+                    <span className="text-gray-400">to</span>
+                    <input
+                      type="number"
+                      placeholder="100000"
+                      value={filters.priceRange[1]}
+                      onChange={(e) => setFilters(prev => ({
+                        ...prev,
+                        priceRange: [prev.priceRange[0], parseInt(e.target.value) || 100000]
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                    />
+                  </div>
+
+                  {/* Preset Price Ranges */}
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: 'Under AED 5,000', value: [0, 5000] },
+                      { label: 'AED 5,000 - AED 10,000', value: [5000, 10000] },
+                      { label: 'AED 10,000 - AED 25,000', value: [10000, 25000] },
+                      { label: 'Over AED 25,000', value: [25000, 100000] },
+                    ].map((range) => (
+                      <button
+                        key={range.label}
+                        onClick={() => setFilters(prev => ({ ...prev, priceRange: range.value }))}
+                        className={`px-3 py-2 text-xs rounded-full border transition ${
+                          filters.priceRange[0] === range.value[0] && filters.priceRange[1] === range.value[1]
+                            ? 'bg-gray-900 text-white border-gray-900'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        {range.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-2">
-                {[
-                  { label: 'Under ₹5,000', value: [0, 5000] },
-                  { label: '₹5,000 - ₹10,000', value: [5000, 10000] },
-                  { label: '₹10,000 - ₹25,000', value: [10000, 25000] },
-                  { label: 'Over ₹25,000', value: [25000, 100000] },
-                ].map((range) => (
-                  <button
-                    key={range.label}
-                    onClick={() => setFilters(prev => ({ ...prev, priceRange: range.value }))}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-full hover:bg-emerald-50 hover:border-emerald-500 hover:text-emerald-700 transition"
-                  >
-                    {range.label}
-                  </button>
-                ))}
-              </div>
+
+              {/* Divider */}
+              <div className="border-t border-gray-200"></div>
+            </div>
+
+            {/* Action Buttons - Fixed at Bottom */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex gap-3">
+              <button
+                onClick={() => setFilters({ priceRange: [0, 100000], categories: [] })}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition"
+              >
+                Clear All
+              </button>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="flex-1 px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium transition"
+              >
+                Apply Filters
+              </button>
             </div>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t">
-            <button
-              onClick={() => setFilters({ priceRange: [0, 100000], categories: [] })}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
-            >
-              Clear All
-            </button>
-            <button
-              onClick={() => setShowFilters(false)}
-              className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
-            >
-              Apply Filters
-            </button>
-          </div>
-        </div>
+        </>
       )}
 
       {loading ? (
@@ -279,6 +325,7 @@ export default function CategoryPage() {
           ))}
         </div>
       )}
+      </div>
     </div>
   )
 }

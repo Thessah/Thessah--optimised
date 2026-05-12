@@ -167,7 +167,37 @@ const Navbar = () => {
   const cartCount = useSelector((state) => state.cart.total);
   const [signInOpen, setSignInOpen] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState(undefined);
+  const [buyNowGlobalEnabled, setBuyNowGlobalEnabled] = useState(true);
   const userDropdownRef = useRef(null);
+
+  // Fetch Buy Now global setting
+  useEffect(() => {
+    const fetchBuyNowSetting = async () => {
+      try {
+        const cached = localStorage.getItem('buyNowGlobalEnabled');
+        if (cached === 'false') setBuyNowGlobalEnabled(false);
+        if (cached === 'true') setBuyNowGlobalEnabled(true);
+
+        const response = await fetch('/api/store/settings', { cache: 'no-store' });
+        if (response.ok) {
+          const data = await response.json();
+          setBuyNowGlobalEnabled(data?.settings?.buyNowGlobalEnabled !== false);
+        }
+      } catch (error) {
+        const cached = localStorage.getItem('buyNowGlobalEnabled');
+        setBuyNowGlobalEnabled(cached !== 'false');
+      }
+    };
+    fetchBuyNowSetting();
+
+    const handleGlobalBuyNowChange = (event) => {
+      if (typeof event?.detail?.enabled === 'boolean') {
+        setBuyNowGlobalEnabled(event.detail.enabled);
+      }
+    };
+    window.addEventListener('globalBuyNowSettingUpdated', handleGlobalBuyNowChange);
+    return () => window.removeEventListener('globalBuyNowSettingUpdated', handleGlobalBuyNowChange);
+  }, []);
 
   // Show sign-in modal automatically on mobile for guest users
   useEffect(() => {
@@ -548,47 +578,59 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Mobile-Only Simple Navbar for Non-Home Pages */}
-      {!isHomePage && (
-        <nav className="lg:hidden sticky top-0 z-50 shadow-sm" style={{ backgroundColor: '#2874f0' }}>
-          <div className="flex items-center gap-3 px-4 py-3">
-            {/* Back Button */}
-            <button 
-              onClick={() => router.back()} 
-              className="p-2 hover:bg-gray-100 rounded-full transition flex-shrink-0"
+      {/* Mobile Top Navbar */}
+      <nav className="lg:hidden sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-1.5 rounded-full text-[#7B1E22] hover:bg-gray-100 transition"
+              aria-label="Open menu"
             >
-              <ArrowLeft size={20} className="text-gray-700" />
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
-
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex-1">
-              <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-all focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-gray-100">
-                <Search size={18} className="text-gray-400 flex-shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Search for products..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-transparent outline-none placeholder-gray-400 text-gray-700 text-sm"
-                />
-              </div>
-            </form>
-
-            {/* Cart Icon */}
-            <button onClick={handleCartClick} className="relative p-2 hover:bg-gray-100 rounded-full transition flex-shrink-0">
-              <ShoppingCart size={20} className="text-gray-700" />
-              {isClient && cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 text-[10px] font-bold text-white bg-blue-600 rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
-                  {cartCount}
-                </span>
-              )}
-            </button>
+            <Link href="/" className="flex items-center">
+              <Image src={Logo} alt="Thessah" width={34} height={34} className="object-contain" priority />
+            </Link>
           </div>
-        </nav>
-      )}
 
-      {/* Original Full Navbar (Hidden on mobile for non-home pages) */}
-      <nav className={`relative z-50 shadow-md ${!isHomePage ? 'hidden lg:block' : ''}`} style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+          <div className="flex items-center gap-3 text-[#7B1E22]">
+            <button onClick={() => router.push('/shop')} className="p-1.5 rounded-full hover:bg-gray-100 transition" aria-label="Search">
+              <Search size={19} />
+            </button>
+            {navActionsVisibility.store && (
+              <Link href="/find-store" className="p-1.5 rounded-full hover:bg-gray-100 transition" aria-label="Store locator">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </Link>
+            )}
+            {navActionsVisibility.wishlist && (
+              <Link href={firebaseUser ? "/dashboard/wishlist" : "/wishlist"} className="relative p-1.5 rounded-full hover:bg-gray-100 transition" aria-label="Wishlist">
+                <HeartIcon size={19} />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 text-[9px] font-bold text-white bg-red-500 rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5">
+                    {wishlistCount > 99 ? '99+' : wishlistCount}
+                  </span>
+                )}
+              </Link>
+            )}
+            {navActionsVisibility.cart && buyNowGlobalEnabled && (
+              <button onClick={handleCartClick} className="relative p-1.5 rounded-full hover:bg-gray-100 transition" aria-label="Cart">
+                <ShoppingCart size={19} />
+                {isClient && cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 text-[9px] font-bold text-white bg-red-500 rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5">
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* Original Full Navbar (Desktop) */}
+      <nav className="relative z-50 shadow-md hidden lg:block" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Top Bar with Logo, Search and Icons */}
         <div className="flex items-center justify-between py-4 gap-6">
@@ -700,7 +742,7 @@ const Navbar = () => {
             )}
 
             {/* Cart */}
-            {navActionsVisibility.cart && (
+            {navActionsVisibility.cart && buyNowGlobalEnabled && (
             <button onClick={handleCartClick} className="relative flex flex-col items-center gap-0.5 hover:text-red-600 transition text-gray-600">
               <ShoppingCart size={20} className="transition" />
               <span className="text-xs font-medium">Cart</span>
@@ -756,7 +798,7 @@ const Navbar = () => {
                       className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition text-sm"
                       onClick={() => setUserDropdownOpen(false)}
                     >
-                      My Orders
+                      {buyNowGlobalEnabled ? 'My Orders' : 'My Enquiry'}
                     </Link>
                     <Link
                       href="/browse-history"
@@ -846,7 +888,7 @@ const Navbar = () => {
               )
             )}
             
-            {navActionsVisibility.cart && (
+            {navActionsVisibility.cart && buyNowGlobalEnabled && (
             <button onClick={handleCartClick} className="relative p-2">
               <ShoppingCart size={20} className="text-gray-700" />
               {isClient && cartCount > 0 && (
@@ -1082,7 +1124,7 @@ const Navbar = () => {
           >
               {/* Header with Logo and Close Button */}
               <div className="flex justify-between items-center border-b border-gray-200 pb-4">
-                <Image src={require('../assets/logo/Asset 12.png')} alt="QuickFynd Logo" width={120} height={35} className="object-contain" />
+                <Image src={require('../assets/logo/Asset 12.png')} alt="Thessah Logo" width={120} height={35} className="object-contain" />
                 <button onClick={() => setMobileMenuOpen(false)} className="p-1 hover:bg-gray-100 rounded-full transition">
                   <X size={24} className="text-gray-600" />
                 </button>
@@ -1130,7 +1172,7 @@ const Navbar = () => {
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <PackageIcon size={18} className="text-gray-600" />
-                      <span>My Orders</span>
+                      <span>{buyNowGlobalEnabled ? 'My Orders' : 'My Enquiry'}</span>
                     </Link>
                     <Link 
                       href="/browse-history" 
@@ -1204,28 +1246,30 @@ const Navbar = () => {
                     </span>
                   )}
                 </Link>
-                <Link 
-                  href="/cart" 
-                  className="flex items-center justify-between px-4 py-3 hover:bg-gray-100 rounded-lg transition text-gray-700 font-medium"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <div className="flex items-center gap-3">
-                    <ShoppingCart size={18} className="text-blue-600" />
-                    <span>Cart</span>
-                  </div>
-                  {cartCount > 0 && (
-                    <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                      {cartCount}
-                    </span>
-                  )}
-                </Link>
+                {buyNowGlobalEnabled && (
+                  <Link 
+                    href="/cart" 
+                    className="flex items-center justify-between px-4 py-3 hover:bg-gray-100 rounded-lg transition text-gray-700 font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShoppingCart size={18} className="text-blue-600" />
+                      <span>Cart</span>
+                    </div>
+                    {cartCount > 0 && (
+                      <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {cartCount}
+                      </span>
+                    )}
+                  </Link>
+                )}
                 <Link 
                   href="/orders" 
                   className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 rounded-lg transition text-gray-700 font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <PackageIcon size={18} className="text-gray-600" />
-                  <span>My Orders</span>
+                  <span>{buyNowGlobalEnabled ? 'My Orders' : 'My Enquiry'}</span>
                 </Link>
                 {isSeller && (
                   <Link 

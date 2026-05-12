@@ -18,6 +18,16 @@ const getImageSrc = (product) => {
   return 'https://ik.imagekit.io/jrstupuke/placeholder.png'
 }
 
+const getSecondImageSrc = (product) => {
+  if (Array.isArray(product?.images) && product.images.length > 1) {
+    const second = product.images[1]
+    if (typeof second === 'string' && second) return second
+    if (second?.url) return second.url
+    if (second?.src) return second.src
+  }
+  return null
+}
+
 const formatPrice = (value) => {
   const n = Number(value)
   if (!Number.isFinite(n) || n <= 0) return null
@@ -30,6 +40,11 @@ export default function AuspiciousProductsCarousel() {
   const dispatch = useDispatch()
   const list = useSelector((state) => state.product.list || [])
   const railRef = useRef(null)
+  const isPointerDownRef = useRef(false)
+  const isDraggingRef = useRef(false)
+  const suppressClickRef = useRef(false)
+  const dragStartXRef = useRef(0)
+  const dragStartScrollLeftRef = useRef(0)
   const [heading, setHeading] = useState({
     title: 'For an Auspicious Beginning',
     subtitle: 'Discover our most-loved designs, curated for this Akshaya Tritiya',
@@ -141,6 +156,72 @@ export default function AuspiciousProductsCarousel() {
     })
   }
 
+  const handleRailMouseDown = (event) => {
+    if (!railRef.current) return
+    isPointerDownRef.current = true
+    isDraggingRef.current = false
+    dragStartXRef.current = event.pageX
+    dragStartScrollLeftRef.current = railRef.current.scrollLeft
+    railRef.current.classList.add('cursor-grab')
+  }
+
+  const handleRailMouseMove = (event) => {
+    if (!railRef.current || !isPointerDownRef.current) return
+    const delta = event.pageX - dragStartXRef.current
+
+    // Ignore tiny movement so a normal click does not start sliding.
+    if (!isDraggingRef.current && Math.abs(delta) < 8) {
+      return
+    }
+
+    if (!isDraggingRef.current) {
+      isDraggingRef.current = true
+      railRef.current.classList.add('cursor-grabbing')
+      railRef.current.classList.remove('cursor-grab')
+      railRef.current.classList.add('snap-none')
+    }
+
+    event.preventDefault()
+    railRef.current.scrollLeft = dragStartScrollLeftRef.current - delta
+  }
+
+  const endRailDrag = () => {
+    if (!railRef.current) return
+    if (!isPointerDownRef.current) return
+
+    isPointerDownRef.current = false
+    const hadDragged = isDraggingRef.current
+    isDraggingRef.current = false
+    railRef.current.classList.remove('cursor-grabbing')
+    railRef.current.classList.add('cursor-grab')
+    railRef.current.classList.remove('snap-none')
+
+    if (hadDragged) {
+      suppressClickRef.current = true
+      window.setTimeout(() => {
+        suppressClickRef.current = false
+      }, 0)
+    }
+  }
+
+  const handleRailWheel = (event) => {
+    if (!railRef.current) return
+    if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+      event.preventDefault()
+      railRef.current.scrollLeft += event.deltaY
+    }
+  }
+
+  const handleRailDragStart = (event) => {
+    event.preventDefault()
+  }
+
+  const handleRailClickCapture = (event) => {
+    if (!suppressClickRef.current) return
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
   return (
     <section className="w-full bg-[#f7f7f7] py-10 sm:py-12">
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -197,7 +278,14 @@ export default function AuspiciousProductsCarousel() {
 
         <div
           ref={railRef}
-          className="flex gap-5 overflow-x-auto snap-x snap-mandatory pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          onMouseDown={handleRailMouseDown}
+          onMouseMove={handleRailMouseMove}
+          onMouseUp={endRailDrag}
+          onMouseLeave={endRailDrag}
+          onWheel={handleRailWheel}
+          onClickCapture={handleRailClickCapture}
+          onDragStart={handleRailDragStart}
+          className="flex gap-5 overflow-x-auto snap-x snap-proximity scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden cursor-grab select-none"
         >
           {isLoading ? (
             Array.from({ length: 4 }).map((_, idx) => (
@@ -215,23 +303,39 @@ export default function AuspiciousProductsCarousel() {
               const salePrice = Number(product.price)
               const listPrice = Number(product.AED)
               const priceText = formatPrice(salePrice > 0 ? salePrice : listPrice)
+              const firstImageSrc = getImageSrc(product)
+              const secondImageSrc = getSecondImageSrc(product)
 
               return (
                 <Link
                   key={product._id || product.id}
                   href={`/product/${product.slug || product._id || product.id}`}
                   data-card
-                  className="snap-start shrink-0 w-[76%] sm:w-[45%] lg:w-[24%]"
+                  draggable={false}
+                  className="group snap-start shrink-0 w-[76%] sm:w-[45%] lg:w-[24%]"
                 >
                   <div className="rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition">
                     <div className="relative aspect-[4/4] bg-gray-100">
                       <Image
-                        src={getImageSrc(product)}
+                        src={firstImageSrc}
                         alt={productName}
                         fill
-                        className="object-cover"
+                        draggable={false}
+                        className={`object-cover will-change-transform will-change-opacity transition-all duration-700 ease-in-out ${
+                          secondImageSrc ? 'opacity-100 scale-100 group-hover:opacity-0 group-hover:scale-[1.02]' : 'opacity-100 scale-100'
+                        }`}
                         sizes="(max-width: 640px) 76vw, (max-width: 1024px) 45vw, 24vw"
                       />
+                      {secondImageSrc && (
+                        <Image
+                          src={secondImageSrc}
+                          alt={`${productName} alternate view`}
+                          fill
+                          draggable={false}
+                          className="object-cover opacity-0 scale-[1.02] group-hover:opacity-100 group-hover:scale-100 will-change-transform will-change-opacity transition-all duration-700 ease-in-out"
+                          sizes="(max-width: 640px) 76vw, (max-width: 1024px) 45vw, 24vw"
+                        />
+                      )}
                     </div>
                   </div>
 

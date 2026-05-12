@@ -12,7 +12,7 @@ export default function ShippingPolicyPage() {
         </h1>
         <p className="text-gray-600 mb-8">
           This Shipping & Delivery Policy explains how orders placed on{" "}
-          <strong>QuickFynd.com</strong>, owned and operated by{" "}
+          <strong>Thessah.ae</strong>, owned and operated by{" "}
           <strong>Nilaas</strong>, are processed, shipped, and delivered.
         </p>
 
@@ -38,7 +38,7 @@ export default function ShippingPolicyPage() {
               2. Shipping Methods & Delivery Timeline
             </h2>
             <p className="text-gray-700">
-              QuickFynd currently delivers products{" "}
+              Thessah currently delivers products{" "}
               <strong>across Kerala, India</strong>. Delivery timelines depend on
               your location, product availability, and courier partner.
             </p>
@@ -78,7 +78,7 @@ export default function ShippingPolicyPage() {
             <p className="text-gray-700">
               Once your order is shipped, tracking details will be shared via{" "}
               <strong>SMS or email</strong>. You can also track your order anytime
-              from the <strong>My Orders</strong> section on QuickFynd.com.
+              from the <strong>My Orders</strong> section on Thessah.ae.
             </p>
           </section>
 
@@ -108,7 +108,7 @@ export default function ShippingPolicyPage() {
               <strong>photos or videos</strong>.
             </p>
             <p className="text-gray-700 mt-1">
-              📧 Email: <strong>support@quickfynd.com</strong>
+              📧 Email: <strong>support@Thessah.ae</strong>
             </p>
           </section>
 
@@ -119,7 +119,7 @@ export default function ShippingPolicyPage() {
             </h2>
             <p className="text-gray-700">
               Customers are responsible for providing accurate shipping address
-              and contact details during checkout. QuickFynd is not responsible
+              and contact details during checkout. Thessah is not responsible
               for delivery failures caused by incorrect information.
             </p>
           </section>
@@ -144,7 +144,7 @@ export default function ShippingPolicyPage() {
             <p className="text-gray-700">
               Delivery delays may occur due to weather conditions, courier
               issues, regional restrictions, or unforeseen circumstances.
-              QuickFynd shall not be held responsible for delays caused by
+              Thessah shall not be held responsible for delays caused by
               external factors beyond our control.
             </p>
           </section>
@@ -155,7 +155,7 @@ export default function ShippingPolicyPage() {
               10. International Shipping
             </h2>
             <p className="text-gray-700">
-              Currently, QuickFynd delivers products{" "}
+              Currently, Thessah delivers products{" "}
               <strong>only within Kerala, India</strong>. International shipping
               is not available at this time.
             </p>
@@ -170,10 +170,10 @@ export default function ShippingPolicyPage() {
               <strong>Business Name:</strong> Nilaas
             </p>
             <p className="text-gray-700">
-              <strong>Website:</strong> https://www.quickfynd.com
+              <strong>Website:</strong> https://www.Thessah.ae
             </p>
             <p className="text-gray-700">
-              <strong>Email:</strong> support@quickfynd.com
+              <strong>Email:</strong> support@Thessah.ae
             </p>
             <p className="text-gray-700">
               <strong>Customer Support:</strong> +91 95263 67551

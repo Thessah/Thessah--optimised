@@ -37,7 +37,10 @@ export default function DashboardWishlistPage() {
     const fetchWishlist = async () => {
         try {
             setLoading(true);
-            const { data } = await axios.get('/api/wishlist');
+            const token = await auth.currentUser.getIdToken(true);
+            const { data } = await axios.get('/api/wishlist', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             setWishlist(data.wishlist);
         } catch (error) {
             console.error('Error fetching wishlist:', error);
@@ -48,9 +51,12 @@ export default function DashboardWishlistPage() {
 
     const removeFromWishlist = async (productId) => {
         try {
+            const token = await auth.currentUser.getIdToken(true);
             await axios.post('/api/wishlist', {
                 productId,
                 action: 'remove'
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
             setWishlist(wishlist.filter(item => item.productId !== productId));
             setSelectedItems(selectedItems.filter(id => id !== productId));

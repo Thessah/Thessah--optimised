@@ -1,11 +1,10 @@
 
-
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import Link from 'next/link'
 
 const TopBarNotification = () => {
-  const [visible, setVisible] = useState(false)
+  const [visible, setVisible] = useState(true) // Start as true for immediate rendering
   const [config, setConfig] = useState(null)
 
   useEffect(() => {
@@ -21,29 +20,51 @@ const TopBarNotification = () => {
       .catch(() => {})
   }, [])
 
-  if (!visible || !config) return null
+  // Auto-close after 30 seconds
+  useEffect(() => {
+    if (!visible) return;
+    const timer = setTimeout(() => setVisible(false), 30000);
+    return () => clearTimeout(timer);
+  }, [visible]);
+
+
+  if (!config || !visible) return null
 
   return (
-    <div className="relative flex items-center justify-center py-3 px-6 bg-white border border-yellow-300 rounded-xl shadow-lg mx-2 mt-3 mb-2">
-      {config.icon && <span className="mr-3 text-2xl text-yellow-500 drop-shadow">{config.icon}</span>}
-      <span className="font-serif font-semibold text-sm md:text-base text-yellow-800 text-center flex-1">
-        {config.text}
-      </span>
-      {config.buttonText && config.buttonPath && (
-        <Link
-          href={config.buttonPath}
-          className="ml-4 bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-1 px-4 rounded-full shadow transition-all text-xs md:text-sm whitespace-nowrap"
-        >
-          {config.buttonText}
-        </Link>
-      )}
-      <button
-        onClick={() => setVisible(false)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-400 hover:text-yellow-600 transition p-1"
-        aria-label="Close notification"
-      >
-        <X size={18} />
-      </button>
+    <div className="w-full bg-gradient-to-r from-yellow-50 to-yellow-100 border-b-2 border-yellow-400 px-2 sm:px-4 py-2 sm:py-2.5">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-3">
+        {/* Left: Icon + Text */}
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
+          {config.icon && (
+            <span className="text-base sm:text-xl text-yellow-500 flex-shrink-0">
+              {config.icon}
+            </span>
+          )}
+          <span className="font-semibold text-xs sm:text-sm text-amber-900 break-words">
+            {config.text}
+          </span>
+        </div>
+
+        {/* Right: Button & Close */}
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          {config.buttonText && config.buttonPath && (
+            <Link
+              href={config.buttonPath}
+              className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-1 px-2.5 sm:px-4 rounded-full shadow transition-all text-xs sm:text-sm whitespace-nowrap"
+            >
+              {config.buttonText}
+            </Link>
+          )}
+          
+          <button
+            onClick={() => setVisible(false)}
+            className="text-yellow-600 hover:text-yellow-700 transition p-0.5 flex-shrink-0"
+            aria-label="Close notification"
+          >
+            <X size={14} className="sm:w-4 sm:h-4" />
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

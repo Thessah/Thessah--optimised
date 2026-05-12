@@ -18,6 +18,7 @@ function ProductsContent() {
     const categoryParam = searchParams.get('category')
 
     const [showFilters, setShowFilters] = useState(false)
+    const [showSortMenu, setShowSortMenu] = useState(false)
     const [showMoreCats, setShowMoreCats] = useState(false)
     const [expandedGroups, setExpandedGroups] = useState({ price: true, categories: true, rating: true, stock: false })
     const [filters, setFilters] = useState({
@@ -146,165 +147,149 @@ function ProductsContent() {
         (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000 ? 1 : 0)
 
     return (
-        <div className="bg-white">
-            <div className="max-w-[1400px] mx-auto px-4 py-6">
-                {/* Header with Results Count */}
-                <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <h1 className="text-3xl md:text-4xl font-serif text-gray-900">
-                        All Jewellery <span className="text-gray-500 text-xl">({filteredProducts.length} results)</span>
-                    </h1>
-                    {/* Search */}
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e)=> setSearchQuery(e.target.value)}
-                            placeholder="Search by name, tag..."
-                            className="w-64 md:w-80 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        />
-                    </div>
+        <div className="bg-gradient-to-b from-gray-50 to-white min-h-screen">
+            <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12">
+                {/* Breadcrumb - Modern Style */}
+                <div className="mb-8 flex items-center text-sm text-gray-500">
+                    <a href="/" className="hover:text-gray-900 transition font-medium">Home</a>
+                    <span className="mx-3 text-gray-300">/</span>
+                    <span className="text-gray-900 font-semibold">All Jewellery</span>
                 </div>
 
-                {/* Filter Chips & Sort */}
-                <div className="flex flex-wrap items-center gap-3 mb-6 pb-4 border-b">
-                    {/* Filter Toggle (desktop + mobile) */}
+                {/* Header Section - Modern */}
+                <div className="mb-12">
+                    <h1 className="text-5xl md:text-6xl font-serif text-gray-900 mb-2">
+                        All Jewellery
+                    </h1>
+                    <p className="text-lg text-gray-500 font-light">
+                        {filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'} available
+                    </p>
+                </div>
+
+                {/* Filter & Sort Bar - Modern Design */}
+                <div className="flex flex-wrap items-center gap-3 mb-8 pb-6 border-b border-gray-200">
+                    {/* Filter Button - Modern */}
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50"
+                        className="flex items-center gap-2 border border-gray-300 px-4 py-2.5 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-all font-medium text-gray-700 shadow-sm hover:shadow-md"
                     >
                         <FilterIcon size={18} />
-                        Filter
+                        <span>Filter</span>
                         {activeFiltersCount > 0 && (
-                            <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">
+                            <span className="ml-1 bg-orange-500 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full">
                                 {activeFiltersCount}
                             </span>
                         )}
                     </button>
 
-                    {/* Quick Filters (suggested) */}
-                    <button
-                        onClick={() => applyPriceRange(25000, 50000)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
-                        aria-label="AED 25,000 - AED 50,000"
-                    >
-                        <PlusIcon size={14} />
-                        <span>AED 25,000 - AED 50,000</span>
-                    </button>
-                    <button
-                        onClick={() => applyCategory('Gifts For Him')}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
-                    >
-                        <PlusIcon size={14} />
-                        <span>Gifts For Him</span>
-                    </button>
-                    <button
-                        onClick={() => applyCategory('Women')}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
-                    >
-                        <PlusIcon size={14} />
-                        <span>Women</span>
-                    </button>
-                    <button
-                        onClick={() => applyCategory('Gold Jewellery')}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
-                    >
-                        <PlusIcon size={14} />
-                        <span>Gold Jewellery</span>
-                    </button>
-                    <button
-                        onClick={() => setShowMoreCats(v => !v)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
-                    >
-                        <PlusIcon size={14} />
-                        <span>Show More</span>
-                        {showMoreCats ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}
-                    </button>
+                    {/* Active Filter Chips - Modern Styling */}
+                    <div className="flex flex-wrap gap-2">
+                        {filters.categories.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {filters.categories.map(cat => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => toggleCategory(cat)}
+                                        className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm transition-colors"
+                                    >
+                                        <span className="font-medium">{cat}</span>
+                                        <XIcon size={14} className="text-gray-500" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        
+                        {(filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (
+                            <button
+                                onClick={() => setFilters(prev => ({ ...prev, priceRange: [0, 100000] }))}
+                                className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm transition-colors"
+                            >
+                                <span className="font-medium">AED {filters.priceRange[0].toLocaleString()} - AED {filters.priceRange[1].toLocaleString()}</span>
+                                <XIcon size={14} className="text-gray-500" />
+                            </button>
+                        )}
 
-                    {showMoreCats && (
-                        <div className="w-full flex flex-wrap items-center gap-2 pl-8">
-                            {categories.slice(0, 10).map(cat => (
-                                <button
-                                    key={`more-${cat}`}
-                                    onClick={() => applyCategory(cat)}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-full text-xs hover:bg-gray-50"
-                                >
-                                    <PlusIcon size={12} />
-                                    <span>{cat}</span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                        {filters.minRating > 0 && (
+                            <button
+                                onClick={() => setFilters(prev => ({ ...prev, minRating: 0 }))}
+                                className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm transition-colors"
+                            >
+                                <span className="flex items-center gap-1 font-medium">
+                                    <StarIcon size={14} className="fill-yellow-400 text-yellow-400" />
+                                    {filters.minRating}+ Rating
+                                </span>
+                                <XIcon size={14} className="text-gray-500" />
+                            </button>
+                        )}
 
-                    {/* Active Filter Chips */}
-                    {filters.categories.map(cat => (
-                        <button
-                            key={cat}
-                            onClick={() => toggleCategory(cat)}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
-                        >
-                            <span>{cat}</span>
-                            <XIcon size={14} />
-                        </button>
-                    ))}
-                    
-                    {(filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (
-                        <button
-                            onClick={() => setFilters(prev => ({ ...prev, priceRange: [0, 100000] }))}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
-                        >
-                            <span>AED {filters.priceRange[0].toLocaleString()} - AED {filters.priceRange[1].toLocaleString()}</span>
-                            <XIcon size={14} />
-                        </button>
-                    )}
+                        {filters.inStock && (
+                            <button
+                                onClick={() => setFilters(prev => ({ ...prev, inStock: false }))}
+                                className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm transition-colors"
+                            >
+                                <span className="font-medium">In Stock Only</span>
+                                <XIcon size={14} className="text-gray-500" />
+                            </button>
+                        )}
 
-                    {filters.minRating > 0 && (
-                        <button
-                            onClick={() => setFilters(prev => ({ ...prev, minRating: 0 }))}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
-                        >
-                            <span className="flex items-center gap-1">
-                                <StarIcon size={14} className="fill-yellow-400 text-yellow-400" />
-                                {filters.minRating}+ Rating
-                            </span>
-                            <XIcon size={14} />
-                        </button>
-                    )}
-
-                    {filters.inStock && (
-                        <button
-                            onClick={() => setFilters(prev => ({ ...prev, inStock: false }))}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
-                        >
-                            <span>In Stock Only</span>
-                            <XIcon size={14} />
-                        </button>
-                    )}
-
-                    {activeFiltersCount > 0 && (
-                        <button
-                            onClick={clearFilters}
-                            className="text-sm text-orange-600 hover:text-orange-700 font-medium underline"
-                        >
-                            Clear All
-                        </button>
-                    )}
+                        {activeFiltersCount > 0 && (
+                            <button
+                                onClick={clearFilters}
+                                className="text-sm text-orange-600 hover:text-orange-700 font-semibold underline ml-2"
+                            >
+                                Clear All
+                            </button>
+                        )}
+                    </div>
 
                     {/* Spacer */}
                     <div className="flex-1"></div>
 
-                    {/* Sort Dropdown */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Sort By:</span>
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                    {/* Sort Dropdown - Modern Design */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowSortMenu(!showSortMenu)}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-xl hover:border-gray-400 hover:bg-gray-50 transition-all text-sm font-medium text-gray-700 shadow-sm"
                         >
-                            <option value="newest">Best Matches</option>
-                            <option value="price-low">Price: Low to High</option>
-                            <option value="price-high">Price: High to Low</option>
-                            <option value="rating">Top Rated</option>
-                        </select>
+                            <span className="text-gray-500">Sort By</span>
+                            <span className="text-gray-900 font-semibold min-w-[130px] text-left">
+                                {sortBy === 'newest' && 'Best Matches'}
+                                {sortBy === 'price-low' && 'Price: Low to High'}
+                                {sortBy === 'price-high' && 'Price: High to Low'}
+                                {sortBy === 'rating' && 'Top Rated'}
+                            </span>
+                            <ChevronDownIcon size={16} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {showSortMenu && (
+                            <>
+                                <div className="fixed inset-0 z-30" onClick={() => setShowSortMenu(false)}></div>
+                                <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-40 overflow-hidden p-1">
+                                    {[
+                                        { value: 'newest', label: 'Best Matches' },
+                                        { value: 'price-low', label: 'Price: Low to High' },
+                                        { value: 'price-high', label: 'Price: High to Low' },
+                                        { value: 'rating', label: 'Top Rated' },
+                                    ].map((option, idx) => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => {
+                                                setSortBy(option.value)
+                                                setShowSortMenu(false)
+                                            }}
+                                            className={`w-full text-left px-4 py-3 rounded-lg transition-colors font-medium ${
+                                                sortBy === option.value
+                                                    ? 'bg-amber-50 text-amber-900'
+                                                    : 'text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -312,186 +297,88 @@ function ProductsContent() {
                 {showFilters && (
                     <>
                         {/* Backdrop */}
-                        <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowFilters(false)}></div>
+                        <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" onClick={() => setShowFilters(false)}></div>
                         
-                        {/* Filter Panel */}
-                        <div className="fixed inset-y-0 left-0 w-full sm:w-96 bg-white z-50 overflow-y-auto">
+                        {/* Filter Panel - Modern Style */}
+                        <div className="fixed inset-y-0 left-0 w-full sm:w-96 bg-white z-50 overflow-y-auto shadow-2xl">
                             {/* Header */}
-                            <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-                                <h2 className="text-lg font-semibold text-gray-900">Filter By</h2>
-                                <button onClick={() => setShowFilters(false)} className="text-gray-500 hover:text-gray-700">
+                            <div className="sticky top-0 bg-gradient-to-b from-gray-50 to-white border-b border-gray-200 p-6 flex items-center justify-between">
+                                <h2 className="text-xl font-semibold text-gray-900">Filters</h2>
+                                <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600 transition rounded-lg p-1 hover:bg-gray-100">
                                     <XIcon size={24} />
                                 </button>
                             </div>
 
-                            <div className="p-4 space-y-4">
-                                {/* Clear Filters */}
-                                {activeFiltersCount > 0 && (
-                                    <button
-                                        onClick={clearFilters}
-                                        className="w-full text-sm text-orange-600 hover:text-orange-700 font-medium border border-orange-600 rounded px-4 py-2 hover:bg-orange-50"
-                                    >
-                                        Clear Filters
-                                    </button>
-                                )}
-
-                                {/* Price */}
-                                <div className="border-b border-gray-200 pb-4">
-                                    <button
-                                        onClick={() => toggleGroup('price')}
-                                        className="w-full flex items-center justify-between py-2 text-gray-900 font-medium hover:text-orange-600"
-                                    >
-                                        <span>Price</span>
-                                        {expandedGroups.price ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />}
-                                    </button>
-                                    {expandedGroups.price && (
-                                        <div className="mt-3 space-y-3">
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="number"
-                                                    placeholder="Min"
-                                                    value={filters.priceRange[0]}
-                                                    onChange={(e) => setFilters(prev => ({
-                                                        ...prev,
-                                                        priceRange: [Number(e.target.value), prev.priceRange[1]]
-                                                    }))}
-                                                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                                                />
-                                                <span className="text-gray-500">-</span>
-                                                <input
-                                                    type="number"
-                                                    placeholder="Max"
-                                                    value={filters.priceRange[1]}
-                                                    onChange={(e) => setFilters(prev => ({
-                                                        ...prev,
-                                                        priceRange: [prev.priceRange[0], Number(e.target.value)]
-                                                    }))}
-                                                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                                                />
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max="100000"
-                                                step="1000"
-                                                value={filters.priceRange[1]}
-                                                onChange={(e) => setFilters(prev => ({
-                                                    ...prev,
-                                                    priceRange: [prev.priceRange[0], Number(e.target.value)]
-                                                }))}
-                                                className="w-full accent-purple-600"
-                                            />
-                                            <p className="text-xs text-gray-600">
-                                                AED {filters.priceRange[0].toLocaleString()} - AED {filters.priceRange[1].toLocaleString()}
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Jewellery Type / Categories */}
-                                <div className="border-b border-gray-200 pb-4">
-                                    <button
-                                        onClick={() => toggleGroup('categories')}
-                                        className="w-full flex items-center justify-between py-2 text-gray-900 font-medium hover:text-orange-600"
-                                    >
-                                        <span>Jewellery Type</span>
-                                        {expandedGroups.categories ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />}
-                                    </button>
-                                    {expandedGroups.categories && (
-                                        <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
-                                            {categories.map(category => (
-                                                <label key={category} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={filters.categories.includes(category)}
-                                                        onChange={() => toggleCategory(category)}
-                                                        className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                                                    />
-                                                    <span className="text-sm text-gray-700">{category}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Minimum Rating */}
-                                <div className="border-b border-gray-200 pb-4">
-                                    <button
-                                        onClick={() => toggleGroup('rating')}
-                                        className="w-full flex items-center justify-between py-2 text-gray-900 font-medium hover:text-orange-600"
-                                    >
-                                        <span>Minimum Rating</span>
-                                        {expandedGroups.rating ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />}
-                                    </button>
-                                    {expandedGroups.rating && (
-                                        <div className="mt-3 space-y-2">
-                                            {[4, 3, 2, 1].map(rating => (
-                                                <label key={rating} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                                    <input
-                                                        type="radio"
-                                                        name="rating"
-                                                        checked={filters.minRating === rating}
-                                                        onChange={() => setFilters(prev => ({ ...prev, minRating: rating }))}
-                                                        className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
-                                                    />
-                                                    <div className="flex items-center gap-1">
-                                                        {Array.from({ length: rating }).map((_, i) => (
-                                                            <StarIcon key={i} size={14} fill="#FFA500" className="text-orange-500" />
-                                                        ))}
-                                                        <span className="text-sm text-gray-700">& Up</span>
-                                                    </div>
-                                                </label>
-                                            ))}
-                                            <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                                <input
-                                                    type="radio"
-                                                    name="rating"
-                                                    checked={filters.minRating === 0}
-                                                    onChange={() => setFilters(prev => ({ ...prev, minRating: 0 }))}
-                                                    className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
-                                                />
-                                                <span className="text-sm text-gray-700">All Ratings</span>
-                                            </label>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Availability */}
+                            <div className="p-6 space-y-8">
+                                {/* Price Range - Always Visible */}
                                 <div>
-                                    <button
-                                        onClick={() => toggleGroup('stock')}
-                                        className="w-full flex items-center justify-between py-2 text-gray-900 font-medium hover:text-orange-600"
-                                    >
-                                        <span>Availability</span>
-                                        {expandedGroups.stock ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />}
-                                    </button>
-                                    {expandedGroups.stock && (
-                                        <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                            <input
-                                                type="checkbox"
-                                                checked={filters.inStock}
-                                                onChange={(e) => setFilters(prev => ({ ...prev, inStock: e.target.checked }))}
-                                                className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                                            />
-                                            <span className="text-sm font-medium text-gray-900">In Stock Only</span>
-                                        </label>
-                                    )}
+                                    <h3 className="text-base font-semibold text-gray-900 mb-5">Price Range</h3>
+                                    
+                                    {/* Input Fields */}
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <input
+                                            type="number"
+                                            placeholder="0"
+                                            value={filters.priceRange[0]}
+                                            onChange={(e) => setFilters(prev => ({
+                                                ...prev,
+                                                priceRange: [Number(e.target.value) || 0, prev.priceRange[1]]
+                                            }))}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
+                                        />
+                                        <span className="text-gray-400">to</span>
+                                        <input
+                                            type="number"
+                                            placeholder="100000"
+                                            value={filters.priceRange[1]}
+                                            onChange={(e) => setFilters(prev => ({
+                                                ...prev,
+                                                priceRange: [prev.priceRange[0], Number(e.target.value) || 100000]
+                                            }))}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
+                                        />
+                                    </div>
+
+                                    {/* Preset Price Ranges */}
+                                    <div className="flex flex-wrap gap-2">
+                                        {[
+                                            { label: 'Under AED 5,000', value: [0, 5000] },
+                                            { label: 'AED 5,000 - AED 10,000', value: [5000, 10000] },
+                                            { label: 'AED 10,000 - AED 25,000', value: [10000, 25000] },
+                                            { label: 'Over AED 25,000', value: [25000, 100000] },
+                                        ].map((range) => (
+                                            <button
+                                                key={range.label}
+                                                onClick={() => setFilters(prev => ({ ...prev, priceRange: range.value }))}
+                                                className={`px-4 py-2.5 text-sm rounded-lg border transition-all font-medium ${
+                                                    filters.priceRange[0] === range.value[0] && filters.priceRange[1] === range.value[1]
+                                                        ? 'bg-gray-900 text-white border-gray-900 shadow-md'
+                                                        : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {range.label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
+
+                                {/* Divider */}
+                                <div className="border-t border-gray-200"></div>
                             </div>
 
-                            {/* Apply Button */}
-                            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex gap-3">
+                            {/* Action Buttons - Fixed at Bottom */}
+                            <div className="sticky bottom-0 bg-gradient-to-t from-white to-white/90 border-t border-gray-200 p-6 flex gap-3 backdrop-blur-sm">
                                 <button
                                     onClick={clearFilters}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 font-medium"
+                                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold transition-all"
                                 >
-                                    Clear Filters
+                                    Clear All
                                 </button>
                                 <button
                                     onClick={() => setShowFilters(false)}
-                                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 font-medium"
+                                    className="flex-1 px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-semibold transition-all shadow-md hover:shadow-lg"
                                 >
-                                    Show Results ({filteredProducts.length})
+                                    Apply Filters
                                 </button>
                             </div>
                         </div>

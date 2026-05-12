@@ -8,7 +8,7 @@ export default function ReturnPolicyPage() {
     <div className="bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-10 min-h-[60vh]">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Return & Replacement Policy</h1>
-        <p className="text-gray-600 mb-8">We want you to be happy with your purchase. This policy explains when and how you can request a return or a replacement on QuickFynd.com.</p>
+        <p className="text-gray-600 mb-8">We want you to be happy with your purchase. This policy explains when and how you can request a return or a replacement on Thessah.ae.</p>
 
         <div className="space-y-6 bg-white border border-gray-200 rounded-xl p-6">
           <section>
@@ -33,7 +33,7 @@ export default function ReturnPolicyPage() {
           </section>
           <section>
             <h2 className="font-semibold text-gray-900 mb-2">6. Contact</h2>
-            <p className="text-gray-700">Need help? Email <a href="mailto:support@QuickFynd.com" className="text-orange-600 underline">support@QuickFynd.com</a>.</p>
+            <p className="text-gray-700">Need help? Email <a href="mailto:support@Thessah.ae" className="text-orange-600 underline">support@Thessah.ae</a>.</p>
           </section>
         </div>
       </div>

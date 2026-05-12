@@ -14,6 +14,7 @@ import MobileProductActions from "./MobileProductActions";
 import { useAuth } from '@/lib/useAuth';
 import GoldRateWidget from './GoldRateWidget';
 import DetailsCard from './DetailsCard';
+import { countryCodes } from '@/assets/countryCodes';
 
 const ProductDetails = ({ product, reviews = [] }) => {
 
@@ -29,6 +30,7 @@ const ProductDetails = ({ product, reviews = [] }) => {
   const [showWishlistToast, setShowWishlistToast] = useState(false);
   const [wishlistMessage, setWishlistMessage] = useState('');
   const [showCartToast, setShowCartToast] = useState(false);
+  const [buyNowGlobalEnabled, setBuyNowGlobalEnabled] = useState(true);
   const [showEnquiryModal, setShowEnquiryModal] = useState(false);
   const [enquiryName, setEnquiryName] = useState('');
   const [enquiryEmail, setEnquiryEmail] = useState('');
@@ -52,6 +54,17 @@ const ProductDetails = ({ product, reviews = [] }) => {
       } catch {}
     })();
   }, [product._id]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await axios.get('/api/store/settings');
+        setBuyNowGlobalEnabled(data?.settings?.buyNowGlobalEnabled !== false);
+      } catch {
+        setBuyNowGlobalEnabled(true);
+      }
+    })();
+  }, []);
   const reviewsToUse = fetchedReviews.length > 0 ? fetchedReviews : reviews;
   const averageRating = reviewsToUse.length > 0
     ? reviewsToUse.reduce((acc, item) => acc + (item.rating || 0), 0) / reviewsToUse.length
@@ -59,6 +72,7 @@ const ProductDetails = ({ product, reviews = [] }) => {
   const reviewCount = reviewsToUse.length > 0
     ? reviewsToUse.length
     : (typeof product.ratingCount === 'number' ? product.ratingCount : 0);
+  const canShowBuyNow = product.showBuyButton === true && buyNowGlobalEnabled;
 
   // Variants
   const variants = Array.isArray(product.variants) ? product.variants : [];
@@ -545,11 +559,11 @@ const ProductDetails = ({ product, reviews = [] }) => {
                         onChange={(e) => setEnquiryCountryCode(e.target.value)}
                         className="w-28 shrink-0 border-r border-gray-300 px-2 py-2 text-sm bg-white focus:outline-none"
                       >
-                        <option value="+971">UAE +971</option>
-                        <option value="+966">Saudi +966</option>
-                        <option value="+91">India +91</option>
-                        <option value="+1">USA +1</option>
-                        <option value="+44">UK +44</option>
+                        {countryCodes.map((country) => (
+                          <option key={`${country.label}-${country.code}`} value={country.code}>
+                            {country.label} {country.code}
+                          </option>
+                        ))}
                       </select>
                       <input
                         type="tel"
@@ -822,8 +836,9 @@ const ProductDetails = ({ product, reviews = [] }) => {
                     </button>
                   </div>
 
-                  {/* Buy Now Button - Always visible unless explicitly disabled */}
-                  {product.showBuyButton !== false && (
+                  {/* Buy Now Button - visible only when manually enabled */}
+                  {/* Show Enquiry as fallback when Buy Now is disabled */}
+                  {canShowBuyNow ? (
                     <button
                       type="button"
                       onClick={handleOrderNow}
@@ -832,10 +847,7 @@ const ProductDetails = ({ product, reviews = [] }) => {
                       <ShoppingCartIcon size={16} className="text-white" strokeWidth={2} />
                       <span>Buy Now</span>
                     </button>
-                  )}
-
-                  {/* Enquiry Button */}
-                  {product.enableEnquiry && product.showEnquiryButton !== false && (
+                  ) : product.enableEnquiry && product.showEnquiryButton !== false ? (
                     <button
                       type="button"
                       onClick={() => setShowEnquiryModal(true)}
@@ -844,7 +856,7 @@ const ProductDetails = ({ product, reviews = [] }) => {
                       <StarIcon size={16} className="text-orange-700" strokeWidth={2} />
                       <span>Enquiry</span>
                     </button>
-                  )}
+                  ) : null}
                 </div>
                 <div className="w-full text-center text-[#B8860B] text-xs py-3 border-t border-gray-200 mt-2">
                   <span className="inline-flex items-center gap-1">
@@ -1047,7 +1059,8 @@ const ProductDetails = ({ product, reviews = [] }) => {
                 </div>
 
                 {/* Buy Now Button */}
-                {product.showBuyButton !== false && (
+                {/* Show Enquiry as fallback when Buy Now is disabled */}
+                {canShowBuyNow ? (
                   <button
                     type="button"
                     onClick={handleOrderNow}
@@ -1056,10 +1069,7 @@ const ProductDetails = ({ product, reviews = [] }) => {
                     <ShoppingCartIcon size={16} className="text-white" strokeWidth={2} />
                     <span>Buy Now</span>
                   </button>
-                )}
-
-                {/* Enquiry Button */}
-                {product.enableEnquiry && product.showEnquiryButton !== false && (
+                ) : product.enableEnquiry && product.showEnquiryButton !== false ? (
                   <button
                     type="button"
                     onClick={() => setShowEnquiryModal(true)}
@@ -1068,7 +1078,7 @@ const ProductDetails = ({ product, reviews = [] }) => {
                     <StarIcon size={16} className="text-orange-700" strokeWidth={2} />
                     <span>Enquiry</span>
                   </button>
-                )}
+                ) : null}
               </div>
               <div className="w-full text-center text-[#B8860B] text-xs py-3 border-t border-gray-200 mt-2">
                 <span className="inline-flex items-center gap-1">
@@ -1117,9 +1127,12 @@ const ProductDetails = ({ product, reviews = [] }) => {
       <MobileProductActions
         onOrderNow={handleOrderNow}
         onAddToCart={handleAddToCart}
+        onEnquiry={() => setShowEnquiryModal(true)}
         effPrice={effPrice}
         currency={currency}
         cartCount={cartCount}
+        showBuyButton={canShowBuyNow}
+        showEnquiryButton={product.enableEnquiry && product.showEnquiryButton !== false}
       />
 
       <style jsx>{`

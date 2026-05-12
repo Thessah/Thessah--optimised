@@ -65,7 +65,7 @@ export default function HelpCenter() {
               <Mail className="w-8 h-8 text-purple-600" />
             </div>
             <h3 className="text-xl font-semibold text-slate-900 mb-2">Write to Us</h3>
-            <p className="text-slate-600 text-sm">support@quickfynd.com</p>
+            <p className="text-slate-600 text-sm">support@se</p>
           </div>
         </div>
 

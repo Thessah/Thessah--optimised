@@ -45,6 +45,7 @@ export default function Hero({ initialSlides = [] }) {
   const [currentTranslate, setCurrentTranslate] = useState(0)
   const [prevTranslate, setPrevTranslate] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
 
   // Fetch banners with sessionStorage SWR-style cache and timeout
   useEffect(() => {
@@ -98,6 +99,32 @@ export default function Hero({ initialSlides = [] }) {
       clearTimeout(timer)
     }
   }, [])
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 640
+      setIsMobile(mobile)
+      console.log('📱 Mobile detection:', mobile, 'viewport width:', window.innerWidth)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Debug: Log slides data
+  useEffect(() => {
+    if (slides.length > 0) {
+      console.log('📊 Slides loaded:', slides.length, 'banners')
+      console.log('🖼️ First slide:', {
+        title: slides[0].title,
+        hasImage: !!slides[0].image,
+        hasMobileImage: !!slides[0].mobileImage,
+        imageUrl: slides[0].image?.substring(0, 50),
+        mobileImageUrl: slides[0].mobileImage?.substring(0, 50)
+      })
+    }
+  }, [slides])
 
   // Handle infinite loop reset
   useEffect(() => {
@@ -170,7 +197,7 @@ export default function Hero({ initialSlides = [] }) {
   if (loading) {
     return (
       <section className="relative w-full bg-white py-6 sm:py-8">
-        <div className="relative h-[280px] sm:h-[350px] lg:h-[400px] xl:h-[470px] 2xl:h-[540px] overflow-hidden px-4 sm:px-8 bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center rounded-xl animate-pulse">
+        <div className="relative aspect-square sm:aspect-auto sm:h-[350px] lg:h-[400px] xl:h-[470px] 2xl:h-[540px] overflow-hidden px-4 sm:px-8 bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center rounded-xl animate-pulse">
           <div className="text-center text-gray-400">
             <div className="w-12 h-12 border-4 border-gray-300 border-t-red-600 rounded-full animate-spin mx-auto"></div>
           </div>
@@ -187,7 +214,7 @@ export default function Hero({ initialSlides = [] }) {
   return (
     <section className="relative w-full bg-white py-4 sm:py-6">
       {/* Carousel Container */}
-      <div className="relative h-[290px] sm:h-[360px] lg:h-[410px] xl:h-[480px] 2xl:h-[560px] overflow-hidden px-4 sm:px-8">
+      <div className="relative aspect-square sm:aspect-auto sm:h-[360px] lg:h-[410px] xl:h-[480px] 2xl:h-[560px] overflow-hidden px-4 sm:px-8">
         {/* Slides Track */}
         <div
           className="flex gap-4 h-full w-full cursor-grab active:cursor-grabbing"
@@ -211,9 +238,9 @@ export default function Hero({ initialSlides = [] }) {
             >
               {/* Optimized Image Container */}
               <div className="relative w-full h-full overflow-hidden rounded-xl sm:rounded-2xl shadow-2xl bg-gray-200">
-                {slide.image && (
+                {(isMobile && slide.mobileImage) || slide.image ? (
                   <Image
-                    src={getOptimizedImageUrl(slide.image)}
+                    src={getOptimizedImageUrl(isMobile && slide.mobileImage ? slide.mobileImage : slide.image)}
                     alt={slide.title || 'Banner'}
                     fill
                     unoptimized
@@ -221,9 +248,9 @@ export default function Hero({ initialSlides = [] }) {
                     loading={i === 1 ? 'eager' : 'lazy'}
                     quality={75}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 96vw, 1700px"
-                    className="object-cover"
+                    className={`object-cover ${isMobile && slide.mobileImage ? 'object-top' : 'object-center'}`}
                   />
-                )}
+                ) : null}
 
                 {/* Content Overlay */}
                 <div className="absolute inset-0 flex items-center bg-gradient-to-r from-black/40 to-transparent">
@@ -285,7 +312,7 @@ export default function Hero({ initialSlides = [] }) {
         </button>
 
         {/* Dots */}
-        <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2.5 z-20">
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center items-center gap-3 z-20">
           {slides.map((_, i) => (
             <button
               key={`dot-${i}`}
@@ -294,10 +321,10 @@ export default function Hero({ initialSlides = [] }) {
                 setIndex(i)
                 setTimeout(() => setPaused(false), 8000)
               }}
-              className={`rounded-full transition-all ${
+              className={`rotate-45 transition-all duration-200 ${
                 i === (index < 0 ? slides.length - 1 : index >= slides.length ? 0 : index)
-                  ? 'w-10 sm:w-12 h-1.5 bg-red-600'
-                  : 'w-1.5 h-1.5 bg-white/70 hover:bg-white'
+                  ? 'w-2.5 h-2.5 bg-[#8B2D2B]'
+                  : 'w-2 h-2 bg-[#D4D4D8] hover:bg-[#BFBFC6]'
               }`}
               aria-label={`Go to slide ${i + 1}`}
             />

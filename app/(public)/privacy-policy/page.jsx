@@ -11,7 +11,7 @@ export default function PrivacyPolicyPage() {
           Privacy Policy
         </h1>
         <p className="text-gray-600 mb-8">
-          This Privacy Policy explains how <strong>QuickFynd.com</strong>, owned
+          This Privacy Policy explains how <strong>Thessah.ae</strong>, owned
           and operated by <strong>Nilaas</strong>, collects, uses, stores, and
           protects your personal information when you use our website and
           services.
@@ -97,7 +97,7 @@ export default function PrivacyPolicyPage() {
               Subject to applicable laws, you may request access to, correction
               of, or deletion of your personal information. To make such a
               request, please contact us at{' '}
-              <strong>support@quickfynd.com</strong>.
+              <strong>support@Thessah.ae</strong>.
             </p>
           </section>
 
@@ -170,10 +170,10 @@ export default function PrivacyPolicyPage() {
               <strong>Business Name:</strong> Nilaas
             </p>
             <p className="text-gray-700 mb-1">
-              <strong>Website:</strong> https://www.quickfynd.com
+              <strong>Website:</strong> https://www.Thessah.ae
             </p>
             <p className="text-gray-700 mb-1">
-              <strong>Email:</strong> support@quickfynd.com
+              <strong>Email:</strong> support@Thessah.ae
             </p>
             <p className="text-gray-700">
               <strong>Customer Support:</strong> +91 95263 67551

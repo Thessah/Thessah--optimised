@@ -78,13 +78,14 @@ export async function POST(request) {
             { upsert: true, new: true }
         );
 
+
         // Populate user
-        const user = await User.findById(userId).select('_id name image').lean();
+        const userDoc = await User.findById(userId).select('_id name image').lean();
 
         return Response.json({
             success: true,
             message: "Review submitted successfully and pending approval",
-            review: { ...newReview.toObject(), user }
+            review: { ...newReview.toObject(), user: userDoc }
         });
 
     } catch (error) {

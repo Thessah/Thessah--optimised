@@ -66,6 +66,7 @@ let cachedSettings = {
     wishlist: true,
     cart: true
   },
+  buyNowGlobalEnabled: true,
   footerSections: [],
   topBar: {
     enabled: true,

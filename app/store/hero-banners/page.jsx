@@ -383,7 +383,7 @@ export default function StoreHeroBannersPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Mobile Banner Image <span className="text-xs text-gray-500">(optional - falls back to desktop)</span>
                 </label>
-                <p className="text-xs text-gray-500 mb-3">Recommended: 800x1200px (portrait)</p>
+                <p className="text-xs text-gray-500 mb-3">Recommended: 600x800px (3:4 portrait)</p>
                 
                 <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
                   {/* URL Input */}
@@ -441,7 +441,7 @@ export default function StoreHeroBannersPage() {
                       <img
                         src={formData.mobileImage}
                         alt="Mobile Preview"
-                        className="w-40 h-60 object-cover rounded mx-auto"
+                        className="w-36 h-48 object-cover rounded mx-auto"
                         onError={(e) => console.error('Image load error:', e)}
                       />
                     </div>

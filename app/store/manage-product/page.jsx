@@ -27,9 +27,13 @@ export default function StoreManageProducts() {
     const [buyNowFilter, setBuyNowFilter] = useState('all')
     const [editingProduct, setEditingProduct] = useState(null)
     const [showEditModal, setShowEditModal] = useState(false)
+    const [showBuyNowSettingsModal, setShowBuyNowSettingsModal] = useState(false)
+    const [buyNowGlobalEnabled, setBuyNowGlobalEnabled] = useState(true)
+    const [buyNowGlobalDraft, setBuyNowGlobalDraft] = useState(true)
+    const [savingBuyNowSettings, setSavingBuyNowSettings] = useState(false)
 
     const filteredProducts = products.filter((product) => {
-        const isBuyNowEnabled = product.showBuyButton !== false
+        const isBuyNowEnabled = product.showBuyButton === true
         if (buyNowFilter === 'enabled') return isBuyNowEnabled
         if (buyNowFilter === 'disabled') return !isBuyNowEnabled
         return true
@@ -44,6 +48,38 @@ export default function StoreManageProducts() {
             toast.error(error?.response?.data?.error || error.message)
         }
         setLoading(false)
+    }
+
+    const fetchGlobalBuyNowSetting = async () => {
+        try {
+            const { data } = await axios.get('/api/store/settings')
+            const enabled = data?.settings?.buyNowGlobalEnabled !== false
+            setBuyNowGlobalEnabled(enabled)
+            setBuyNowGlobalDraft(enabled)
+        } catch {
+            setBuyNowGlobalEnabled(true)
+            setBuyNowGlobalDraft(true)
+        }
+    }
+
+    const saveGlobalBuyNowSetting = async () => {
+        try {
+            setSavingBuyNowSettings(true)
+            await axios.put('/api/store/settings', {
+                buyNowGlobalEnabled: buyNowGlobalDraft === true
+            })
+            setBuyNowGlobalEnabled(buyNowGlobalDraft === true)
+            localStorage.setItem('buyNowGlobalEnabled', buyNowGlobalDraft === true ? 'true' : 'false')
+            window.dispatchEvent(new CustomEvent('globalBuyNowSettingUpdated', {
+                detail: { enabled: buyNowGlobalDraft === true }
+            }))
+            setShowBuyNowSettingsModal(false)
+            toast.success(buyNowGlobalDraft ? 'Global Buy Now enabled' : 'Global Buy Now disabled for all products')
+        } catch (error) {
+            toast.error(error?.response?.data?.error || error.message || 'Failed to update Buy Now settings')
+        } finally {
+            setSavingBuyNowSettings(false)
+        }
     }
 
     const toggleStock = async (productId) => {
@@ -136,6 +172,7 @@ export default function StoreManageProducts() {
     useEffect(() => {
         if(user){
             fetchStoreProducts()
+            fetchGlobalBuyNowSetting()
         }  
     }, [user])
 
@@ -143,7 +180,26 @@ export default function StoreManageProducts() {
 
     return (
         <>
-            <h1 className="text-2xl text-slate-500 mb-5">Manage <span className="text-slate-800 font-medium">Products</span></h1>
+            <div className="mb-5 flex items-center justify-between gap-3">
+                <h1 className="text-2xl text-slate-500">Manage <span className="text-slate-800 font-medium">Products</span></h1>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setBuyNowGlobalDraft(buyNowGlobalEnabled)
+                        setShowBuyNowSettingsModal(true)
+                    }}
+                    className="px-4 py-2 text-sm font-semibold rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition"
+                >
+                    Buy Now Settings
+                </button>
+            </div>
+
+            {!buyNowGlobalEnabled && (
+                <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    Global Buy Now is disabled. Buy Now button will not show on product pages for any product.
+                </div>
+            )}
+
             <div className="flex items-center gap-2 mb-4">
                 <button
                     onClick={() => setBuyNowFilter('all')}
@@ -155,13 +211,13 @@ export default function StoreManageProducts() {
                     onClick={() => setBuyNowFilter('enabled')}
                     className={`px-3 py-1.5 text-sm rounded-lg border transition ${buyNowFilter === 'enabled' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
                 >
-                    Buy Now On ({products.filter((p) => p.showBuyButton !== false).length})
+                    Buy Now On ({products.filter((p) => p.showBuyButton === true).length})
                 </button>
                 <button
                     onClick={() => setBuyNowFilter('disabled')}
                     className={`px-3 py-1.5 text-sm rounded-lg border transition ${buyNowFilter === 'disabled' ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
                 >
-                    Buy Now Off ({products.filter((p) => p.showBuyButton === false).length})
+                    Buy Now Off ({products.filter((p) => p.showBuyButton !== true).length})
                 </button>
             </div>
             <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-sm">
@@ -233,7 +289,7 @@ export default function StoreManageProducts() {
                                             type="checkbox"
                                             className="sr-only peer"
                                             onChange={() => toast.promise(toggleBuyNow(product._id), { loading: "Updating..." })}
-                                            checked={product.showBuyButton !== false}
+                                            checked={product.showBuyButton === true}
                                         />
                                         <div className="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-indigo-600 transition-colors duration-200"></div>
                                         <span className="dot absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
@@ -284,6 +340,46 @@ export default function StoreManageProducts() {
                     }}
                     onSubmitSuccess={handleUpdateSuccess}
                 />
+            )}
+
+            {showBuyNowSettingsModal && (
+                <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={() => setShowBuyNowSettingsModal(false)}>
+                    <div className="w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
+                        <h2 className="text-lg font-semibold text-slate-900">Buy Now Global Settings</h2>
+                        <p className="text-sm text-slate-600 mt-1 mb-5">Control Buy Now button visibility for all products.</p>
+
+                        <label className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-3">
+                            <div>
+                                <p className="text-sm font-medium text-slate-900">Enable Buy Now globally</p>
+                                <p className="text-xs text-slate-500">If disabled, Buy Now will be hidden on all product pages.</p>
+                            </div>
+                            <input
+                                type="checkbox"
+                                checked={buyNowGlobalDraft}
+                                onChange={(e) => setBuyNowGlobalDraft(e.target.checked)}
+                                className="w-5 h-5 accent-indigo-600"
+                            />
+                        </label>
+
+                        <div className="mt-6 flex items-center justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowBuyNowSettingsModal(false)}
+                                className="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={saveGlobalBuyNowSetting}
+                                disabled={savingBuyNowSettings}
+                                className={`px-4 py-2 text-sm rounded-lg text-white transition ${savingBuyNowSettings ? 'bg-indigo-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                            >
+                                {savingBuyNowSettings ? 'Saving...' : 'Save'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </>
     )

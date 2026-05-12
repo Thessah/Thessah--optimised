@@ -28,7 +28,7 @@ export async function POST(request) {
       return Response.json({ error: "Unauthorized to modify this product" }, { status: 403 });
     }
 
-    product.showBuyButton = product.showBuyButton === false ? true : false;
+    product.showBuyButton = !(product.showBuyButton === true);
     await product.save();
 
     return Response.json({

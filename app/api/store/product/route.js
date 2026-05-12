@@ -183,7 +183,7 @@ export async function POST(request) {
         } catch {}
 
         // Button visibility
-        const showBuyButton = String(formData.get("showBuyButton") || "true").toLowerCase() === "true";
+        const showBuyButton = String(formData.get("showBuyButton") || "false").toLowerCase() === "true";
         const showEnquiryButton = String(formData.get("showEnquiryButton") || "true").toLowerCase() === "true";
 
         const product = await Product.create({
@@ -376,7 +376,7 @@ export async function PUT(request) {
         } catch {}
 
         // Button visibility for update
-        const showBuyButton = formData.get("showBuyButton") !== null ? String(formData.get("showBuyButton")).toLowerCase() === "true" : product.showBuyButton;
+        const showBuyButton = formData.get("showBuyButton") !== null ? String(formData.get("showBuyButton")).toLowerCase() === "true" : (product.showBuyButton === true);
         const showEnquiryButton = formData.get("showEnquiryButton") !== null ? String(formData.get("showEnquiryButton")).toLowerCase() === "true" : product.showEnquiryButton;
 
         // If slug is provided and changed, check uniqueness

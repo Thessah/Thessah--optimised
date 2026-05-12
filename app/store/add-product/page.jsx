@@ -94,7 +94,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
         allowReturn: true,
         allowReplacement: true,
         enquiryOnly: false,
-        showBuyButton: true,
+        showBuyButton: false,
         showEnquiryButton: true,
         reviews: [],
         badges: [], // Array of badge labels like "Price Lower Than Usual", "Hot Deal", etc.
@@ -309,7 +309,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                 allowReturn: product.allowReturn !== undefined ? product.allowReturn : true,
                 allowReplacement: product.allowReplacement !== undefined ? product.allowReplacement : true,
                 enquiryOnly: product.enquiryOnly || false,
-                showBuyButton: product.showBuyButton !== undefined ? product.showBuyButton : true,
+                showBuyButton: product.showBuyButton === true,
                 showEnquiryButton: product.showEnquiryButton !== undefined ? product.showEnquiryButton : true,
                 reviews: product.reviews || [],
                 badges: product.attributes?.badges || [],

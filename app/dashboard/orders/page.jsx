@@ -14,6 +14,7 @@ export default function DashboardOrdersPage() {
   const [orders, setOrders] = useState([])
   const [loadingOrders, setLoadingOrders] = useState(true)
   const [expandedOrder, setExpandedOrder] = useState(null)
+  const [buyNowGlobalEnabled, setBuyNowGlobalEnabled] = useState(true)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u ?? null))
@@ -41,13 +42,25 @@ export default function DashboardOrdersPage() {
     loadOrders()
   }, [user])
 
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const { data } = await axios.get('/api/store/settings')
+        setBuyNowGlobalEnabled(data?.settings?.buyNowGlobalEnabled !== false)
+      } catch {
+        setBuyNowGlobalEnabled(true)
+      }
+    }
+    loadSettings()
+  }, [])
+
   if (user === undefined) return <Loading />
 
   if (user === null) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-semibold text-slate-800 mb-3">Dashboard / Orders</h1>
-        <p className="text-slate-600 mb-6">Please sign in to view your orders.</p>
+        <h1 className="text-2xl font-semibold text-slate-800 mb-3">Dashboard / {buyNowGlobalEnabled ? 'Orders' : 'Enquiries'}</h1>
+        <p className="text-slate-600 mb-6">Please sign in to view your {buyNowGlobalEnabled ? 'orders' : 'enquiries'}.</p>
         <Link href="/" className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg">Go to Home</Link>
       </div>
     )
@@ -58,13 +71,18 @@ export default function DashboardOrdersPage() {
       <DashboardSidebar />
 
         <main className="md:col-span-3">
-          <h1 className="text-2xl font-semibold text-slate-800 mb-6">My Orders</h1>
+          <h1 className="text-2xl font-semibold text-slate-800 mb-6">{buyNowGlobalEnabled ? 'My Orders' : 'My Enquiries'}</h1>
+          {!buyNowGlobalEnabled && (
+            <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              Buy Now is disabled globally. Ordering is off; only enquiry mode is available.
+            </div>
+          )}
           {loadingOrders ? (
             <Loading />
           ) : orders.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-              <p className="text-slate-600">No orders found.</p>
-              <Link href="/products" className="inline-block mt-3 px-4 py-2 bg-slate-800 text-white rounded-lg">Shop Now</Link>
+              <p className="text-slate-600">{buyNowGlobalEnabled ? 'No orders found.' : 'No enquiries found.'}</p>
+              <Link href="/wishlist" className="inline-block mt-3 px-4 py-2 bg-slate-800 text-white rounded-lg">{buyNowGlobalEnabled ? 'Shop Now' : 'Go to Wishlist'}</Link>
             </div>
           ) : (
             <div className="space-y-4">
