@@ -590,7 +590,7 @@ const Navbar = () => {
               {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
             <Link href="/" className="flex items-center">
-              <Image src={Logo} alt="Thessah" width={34} height={34} className="object-contain" priority />
+              <Image src={Logo} alt="Thessah" width={98} height={32} className="object-contain" priority />
             </Link>
           </div>
 
