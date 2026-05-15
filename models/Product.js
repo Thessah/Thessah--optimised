@@ -21,6 +21,11 @@ const ProductSchema = new mongoose.Schema({
   allowReturn: { type: Boolean, default: true },
   allowReplacement: { type: Boolean, default: true },
   tags: { type: [String], default: [] },
+  targetAudience: {
+    type: [String],
+    enum: ['men', 'women', 'kids'],
+    default: [],
+  },
   storeId: String,
   enableEnquiry: { type: Boolean, default: false },
   showBuyButton: { type: Boolean, default: false },
@@ -48,6 +53,7 @@ ProductSchema.index({ category: 1, inStock: 1 });
 ProductSchema.index({ storeId: 1, inStock: 1 });
 ProductSchema.index({ slug: 1 });
 ProductSchema.index({ tags: 1 });
+ProductSchema.index({ targetAudience: 1 });
 // Text index for basic search across common fields
 try {
   ProductSchema.index({ name: 'text', description: 'text', shortDescription: 'text', category: 'text', tags: 'text' });

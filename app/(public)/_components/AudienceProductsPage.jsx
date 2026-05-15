@@ -13,6 +13,9 @@ const AUDIENCE_KEYWORDS = {
 
 const toSearchableText = (product) => {
   const tags = Array.isArray(product?.tags) ? product.tags.join(' ') : ''
+  const targetAudience = Array.isArray(product?.targetAudience)
+    ? product.targetAudience.join(' ')
+    : ''
 
   return [
     product?.name,
@@ -20,6 +23,7 @@ const toSearchableText = (product) => {
     product?.category,
     product?.subcategory,
     product?.gender,
+    targetAudience,
     tags,
   ]
     .filter(Boolean)
@@ -40,6 +44,9 @@ export default function AudienceProductsPage({ audience, title }) {
 
     return products
       .filter((product) => {
+        if (Array.isArray(product?.targetAudience) && product.targetAudience.includes(audience)) {
+          return true
+        }
         const searchableText = toSearchableText(product)
         return keywords.some((keyword) => searchableText.includes(keyword))
       })

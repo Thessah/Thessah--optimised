@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import axios from 'axios'
 import { useSelector } from 'react-redux'
@@ -30,8 +30,11 @@ const matchesCategorySlug = (product, normalizedSlug) => {
 
 export default function CategoryPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug || ''
   const normalizedSlug = decodeURIComponent(slug).toLowerCase()
+  const audienceParamRaw = (searchParams?.get('audience') || '').toLowerCase()
+  const selectedAudience = ['men', 'women', 'kids'].includes(audienceParamRaw) ? audienceParamRaw : ''
   const products = useSelector((state) => state.product.list || [])
   const [categoryTitle, setCategoryTitle] = useState('')
   const [fetchedProducts, setFetchedProducts] = useState(null)
@@ -40,6 +43,24 @@ export default function CategoryPage() {
   const [sortBy, setSortBy] = useState('newest')
   const [showFilters, setShowFilters] = useState(false)
   const [showSortMenu, setShowSortMenu] = useState(false)
+
+  const matchesAudience = (product) => {
+    if (!selectedAudience) return true
+
+    const targets = Array.isArray(product?.targetAudience)
+      ? product.targetAudience.map((item) => String(item).toLowerCase())
+      : []
+
+    if (targets.includes(selectedAudience)) return true
+
+    const tags = Array.isArray(product?.tags) ? product.tags.join(' ') : ''
+    const searchable = [product?.name, product?.category, product?.gender, tags]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+
+    return searchable.includes(selectedAudience)
+  }
 
   const reduxMatchedProducts = useMemo(
     () => products.filter((product) => matchesCategorySlug(product, normalizedSlug)),
@@ -58,12 +79,16 @@ export default function CategoryPage() {
   useEffect(() => {
     const fetchCategoryNameAndProducts = async () => {
       const hasReduxFallback = reduxMatchedProducts.length > 0
+      const fetchProductsByCategoryName = async (categoryName) => {
+        const res = await axios.get(`/api/products?category=${encodeURIComponent(categoryName)}&compact=true`)
+        return Array.isArray(res.data?.products) ? res.data.products : []
+      }
 
       try {
         setLoading(!hasReduxFallback)
         const [categoryRes, productRes] = await Promise.all([
           axios.get('/api/store/categories?lite=true'),
-          axios.get(`/api/products?category=${encodeURIComponent(fallbackCategoryTitle)}&compact=true`),
+          fetchProductsByCategoryName(fallbackCategoryTitle),
         ])
 
         // Resolve category name from store categories
@@ -82,12 +107,20 @@ export default function CategoryPage() {
           setCategoryTitle(fallbackCategoryTitle)
         }
 
+        let resolvedProducts = productRes
+
         if (!match?.name && resolvedTitle !== fallbackCategoryTitle) {
-          const refinedRes = await axios.get(`/api/products?category=${encodeURIComponent(resolvedTitle)}&compact=true`)
-          setFetchedProducts(Array.isArray(refinedRes.data?.products) ? refinedRes.data.products : [])
-        } else {
-          setFetchedProducts(Array.isArray(productRes.data?.products) ? productRes.data.products : [])
+          resolvedProducts = await fetchProductsByCategoryName(resolvedTitle)
         }
+
+        // Fallback for category-name mismatches: fetch broader list and filter by slug locally.
+        if (resolvedProducts.length === 0) {
+          const broadRes = await axios.get('/api/products?compact=true&limit=500')
+          const broadProducts = Array.isArray(broadRes.data?.products) ? broadRes.data.products : []
+          resolvedProducts = broadProducts.filter((product) => matchesCategorySlug(product, normalizedSlug))
+        }
+
+        setFetchedProducts(resolvedProducts)
       } catch (e) {
         if (!hasReduxFallback) {
           setFetchedProducts([])
@@ -108,6 +141,10 @@ export default function CategoryPage() {
     } else if (reduxMatchedProducts.length > 0) {
       productsToFilter = [...reduxMatchedProducts];
     }
+
+    if (selectedAudience) {
+      productsToFilter = productsToFilter.filter((p) => matchesAudience(p))
+    }
     
     // Apply filters
     if (filters.priceRange && filters.priceRange[0] > 0 || filters.priceRange && filters.priceRange[1] < 100000) {
@@ -127,7 +164,7 @@ export default function CategoryPage() {
     }
 
     return productsToFilter;
-  }, [products, normalizedSlug, fetchedProducts, filters, sortBy])
+  }, [products, normalizedSlug, fetchedProducts, filters, sortBy, selectedAudience])
 
   return (
     <div className="bg-gradient-to-b from-gray-50 to-white min-h-screen">

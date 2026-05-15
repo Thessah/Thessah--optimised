@@ -5,47 +5,22 @@ import Image from "next/image";
 import Logo from "../assets/logo/logo.png";
 
 const Footer = () => {
-    const [footerSections, setFooterSections] = useState([
-        {
-            title: "Useful Links",
-            links: [
-                { name: "Delivery Information", link: '/delivery-information' },
-                { name: "International Shipping", link: '/international-shipping' },
-                { name: "Payment Options", link: '/payment-options' },
-                { name: "Track your Order", link: '/track-order' },
-                { name: "Returns", link: '/returns' },
-                { name: "Find a Store", link: '/find-store' },
-            ]
-        },
-        {
-            title: "Information",
-            links: [
-                { name: "Blog", link: '/blog' },
-                { name: "Offers & Contest Details", link: '/offers' },
-                { name: "Help & FAQs", link: '/help' },
-                { name: "About Thessah", link: '/about-us' },
-            ]
-        },
-        {
-            title: "Contact Us",
-            links: [
-                { name: "1800-266-0123", link: "tel:1800-266-0123", isPhone: true },
-                { name: "Chat With Us", link: "/chat", isChat: true },
-                { name: "+91 8147349242", link: "tel:+918147349242", isPhone: true },
-            ]
-        }
-    ]);
+    const [footerSections, setFooterSections] = useState([]);
 
     useEffect(() => {
         const fetchFooterMenu = async () => {
             try {
                 const settingsRes = await fetch('/api/store/settings');
                 const settingsData = await settingsRes.json();
-                if (settingsData.settings?.footerSections) {
-                    setFooterSections(settingsData.settings.footerSections);
+                const sections = settingsData?.settings?.footerSections;
+                if (Array.isArray(sections)) {
+                    setFooterSections(sections);
+                } else {
+                    setFooterSections([]);
                 }
             } catch (error) {
                 console.error('Error fetching footer menu:', error);
+                setFooterSections([]);
             }
         };
         
@@ -68,6 +43,9 @@ const Footer = () => {
     ];
 
     const paymentIcons = ['VISA', 'Mastercard', 'Maestro', 'PayPal', 'Diners Club', 'American Express'];
+    const visibleFooterSections = footerSections.filter(
+        (section) => section?.title && Array.isArray(section?.links) && section.links.length > 0
+    );
 
     return (
         <footer className="bg-[#008C6D] text-white py-12 sm:py-16">
@@ -89,7 +67,7 @@ const Footer = () => {
                     </div>
 
                     {/* Dynamic Footer Sections */}
-                    {footerSections.map((section, index) => (
+                    {visibleFooterSections.map((section, index) => (
                         <div key={index}>
                             <h3 className="text-white font-semibold text-base mb-6">
                                 {section.title}

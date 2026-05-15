@@ -76,6 +76,23 @@ export async function POST(request) {
             }
         }
         const stockQuantity = formData.get("stockQuantity") ? Number(formData.get("stockQuantity")) : 0;
+        const targetAudienceRaw = formData.get("targetAudience");
+        let targetAudience = [];
+        if (typeof targetAudienceRaw === 'string' && targetAudienceRaw.trim().length > 0) {
+            try {
+                const parsed = JSON.parse(targetAudienceRaw);
+                if (Array.isArray(parsed)) {
+                    targetAudience = parsed
+                        .map((item) => String(item).trim().toLowerCase())
+                        .filter((item) => ['men', 'women', 'kids'].includes(item));
+                }
+            } catch {
+                targetAudience = String(targetAudienceRaw)
+                    .split(',')
+                    .map((item) => item.trim().toLowerCase())
+                    .filter((item) => ['men', 'women', 'kids'].includes(item));
+            }
+        }
         // New: variants support
         const hasVariants = String(formData.get("hasVariants") || "false").toLowerCase() === "true";
         const variantsRaw = formData.get("variants"); // expected JSON string if hasVariants
@@ -203,6 +220,7 @@ export async function POST(request) {
             fastDelivery,
             stockQuantity,
             tags,
+            targetAudience,
             storeId,
             goldType,
             goldWeight,
@@ -293,6 +311,28 @@ export async function PUT(request) {
         }
         const AED = formData.get("AED") ? Number(formData.get("AED")) : undefined;
         const price = formData.get("price") ? Number(formData.get("price")) : undefined;
+        const targetAudienceRaw = formData.get("targetAudience");
+        let targetAudience = undefined; // undefined means don't change
+        if (typeof targetAudienceRaw === 'string') {
+            const trimmed = targetAudienceRaw.trim();
+            if (trimmed.length > 0) {
+                try {
+                    const parsed = JSON.parse(trimmed);
+                    if (Array.isArray(parsed)) {
+                        targetAudience = parsed
+                            .map((item) => String(item).trim().toLowerCase())
+                            .filter((item) => ['men', 'women', 'kids'].includes(item));
+                    }
+                } catch {
+                    targetAudience = trimmed
+                        .split(',')
+                        .map((item) => item.trim().toLowerCase())
+                        .filter((item) => ['men', 'women', 'kids'].includes(item));
+                }
+            } else {
+                targetAudience = []; // explicit empty to clear
+            }
+        }
         const fastDelivery = String(formData.get("fastDelivery") || "").toLowerCase() === "true";
         let slug = formData.get("slug")?.toString().trim() || "";
         if (slug) {
@@ -408,6 +448,9 @@ export async function PUT(request) {
 
         if (tags !== undefined) {
             updateData.tags = tags;
+        }
+        if (targetAudience !== undefined) {
+            updateData.targetAudience = targetAudience;
         }
 
         // Add stockQuantity if provided

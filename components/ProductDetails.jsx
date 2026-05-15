@@ -551,17 +551,17 @@ const ProductDetails = ({ product, reviews = [] }) => {
                     <label className="text-xs text-gray-600">Email</label>
                     <input type="email" value={enquiryEmail} onChange={(e) => setEnquiryEmail(e.target.value)} required className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
                   </div>
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="text-xs text-gray-600">Phone</label>
                     <div className="mt-1 flex rounded-lg border border-gray-300 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500">
                       <select
                         value={enquiryCountryCode}
                         onChange={(e) => setEnquiryCountryCode(e.target.value)}
-                        className="w-28 shrink-0 border-r border-gray-300 px-2 py-2 text-sm bg-white focus:outline-none"
+                        className="w-20 shrink-0 border-r border-gray-300 px-2 py-2 text-sm bg-white focus:outline-none"
                       >
                         {countryCodes.map((country) => (
                           <option key={`${country.label}-${country.code}`} value={country.code}>
-                            {country.label} {country.code}
+                            {country.code}
                           </option>
                         ))}
                       </select>
@@ -575,8 +575,7 @@ const ProductDetails = ({ product, reviews = [] }) => {
                       />
                     </div>
                   </div>
-                  <div className="hidden md:block"></div>
-                </div>
+                  </div>
                 <div>
                   <label className="text-xs text-gray-600">Message</label>
                   <textarea value={enquiryMessage} onChange={(e) => setEnquiryMessage(e.target.value)} rows={5} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>

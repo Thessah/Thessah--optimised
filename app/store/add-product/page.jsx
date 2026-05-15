@@ -73,6 +73,7 @@ export const dynamic = 'force-dynamic'
 export default function ProductForm({ product = null, onClose, onSubmitSuccess }) {
     const router = useRouter()
     const [dbCategories, setDbCategories] = useState([])
+    const audienceOptions = ['men', 'women', 'kids']
     const colorOptions = ['Red', 'Blue', 'Green', 'Black', 'White', 'Yellow', 'Purple']
     const sizeOptions = ['S', 'M', 'L', 'XL', 'XXL']
 
@@ -80,12 +81,12 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
     const [productInfo, setProductInfo] = useState({
         name: "",
         slug: "",
-        brand: "",
+        brand: "Thessah",
         shortDescription: "",
         description: "",
         AED: "",
         price: "",
-        category: "",
+        category: [],
         sku: "",
         stockQuantity: '',
         colors: [],
@@ -99,6 +100,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
         reviews: [],
         badges: [], // Array of badge labels like "Price Lower Than Usual", "Hot Deal", etc.
         tags: [],
+        targetAudience: [],
         goldType: '',
         goldPurityKarat: '22',
         goldWeight: '',
@@ -300,7 +302,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                 description: product.description || "",
                 AED: product.AED || "",
                 price: product.price || "",
-                category: product.category || "",
+                category: product.category ? (Array.isArray(product.category) ? product.category : product.category.split(',').map(s => s.trim()).filter(Boolean)) : [],
                 sku: product.sku || "",
                 stockQuantity: product.stockQuantity ?? '',
                 colors: product.colors || [],
@@ -314,6 +316,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                 reviews: product.reviews || [],
                 badges: product.attributes?.badges || [],
                 tags: product.tags || [],
+                targetAudience: Array.isArray(product.targetAudience) ? product.targetAudience : [],
                 goldType: product.goldType || '',
                 goldWeight: product.goldWeight || '',
                 goldRate: product.goldRate || '',
@@ -452,8 +455,10 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
             const formData = new FormData()
 
             Object.entries(productInfo).forEach(([key, value]) => {
-                if (["colors", "sizes"].includes(key)) {
+                if (["colors", "sizes", "targetAudience"].includes(key)) {
                     formData.append(key, JSON.stringify(value))
+                } else if (key === 'category') {
+                    formData.append('category', Array.isArray(value) ? value.join(',') : value)
                 } else if (key === 'reviews') {
                     const cleanReviews = value.map(({ name, rating, comment }) => ({ name, rating, comment }))
                     formData.append('reviews', JSON.stringify(cleanReviews))
@@ -647,30 +652,75 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Brand</label>
                                 <input name="brand" value={productInfo.brand} onChange={onChangeHandler} className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition" placeholder="Brand (optional)" />
                             </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Category *</label>
-                                <select name="category" value={productInfo.category} onChange={onChangeHandler} className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition">
-                                    <option value="">Select category</option>
-                                    {dbCategories.map(cat => {
-                                        if (!cat.parentId) {
-                                            return [
-                                                <option key={cat._id} value={cat.name} className="font-semibold">
-                                                    {cat.name}
-                                                </option>,
-                                                ...cat.children.map(child => (
-                                                    <option key={child._id} value={child.name} className="pl-4">
-                                                        &nbsp;&nbsp;&nbsp;&nbsp;{child.name}
-                                                    </option>
-                                                ))
-                                            ]
-                                        }
-                                        return null
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Category * <span className="text-xs font-normal text-slate-400">(select one or more)</span></label>
+                                <div className="flex flex-wrap gap-2">
+                                    {dbCategories.flatMap(cat => [
+                                        ...(!cat.parentId ? [cat] : []),
+                                        ...(cat.children || [])
+                                    ]).filter(cat => cat && cat.name).map(cat => {
+                                        const selected = productInfo.category.includes(cat.name)
+                                        return (
+                                            <button
+                                                key={cat._id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setProductInfo(prev => ({
+                                                        ...prev,
+                                                        category: selected
+                                                            ? prev.category.filter(c => c !== cat.name)
+                                                            : [...prev.category, cat.name]
+                                                    }))
+                                                }}
+                                                className={`px-3 py-1.5 rounded-full text-sm border-2 transition font-medium ${
+                                                    selected
+                                                        ? 'bg-blue-600 text-white border-blue-600'
+                                                        : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'
+                                                }`}
+                                            >
+                                                {cat.name}
+                                            </button>
+                                        )
                                     })}
-                                </select>
+                                </div>
+                                {productInfo.category.length === 0 && (
+                                    <p className="text-xs text-red-400 mt-1">Please select at least one category</p>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">SKU</label>
                                 <input name="sku" value={productInfo.sku || ""} onChange={onChangeHandler} className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition" placeholder="Stock Keeping Unit (optional)" />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">This Product Is For</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {audienceOptions.map((audience) => {
+                                        const selected = productInfo.targetAudience.includes(audience)
+                                        return (
+                                            <button
+                                                key={audience}
+                                                type="button"
+                                                onClick={() => {
+                                                    setProductInfo((prev) => ({
+                                                        ...prev,
+                                                        targetAudience: selected
+                                                            ? prev.targetAudience.filter((item) => item !== audience)
+                                                            : [...prev.targetAudience, audience],
+                                                    }))
+                                                }}
+                                                className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize transition ${
+                                                    selected
+                                                        ? 'bg-blue-600 text-white shadow'
+                                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                                }`}
+                                            >
+                                                {selected ? '✓ ' : ''}
+                                                {audience}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                                <p className="text-xs text-slate-500 mt-2">You can select multiple options (men, women, kids).</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Stock Quantity *</label>

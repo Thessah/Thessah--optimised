@@ -25,6 +25,7 @@ export default function StoreManageProducts() {
     const [loading, setLoading] = useState(true)
     const [products, setProducts] = useState([])
     const [buyNowFilter, setBuyNowFilter] = useState('all')
+    const [audienceFilter, setAudienceFilter] = useState('all')
     const [editingProduct, setEditingProduct] = useState(null)
     const [showEditModal, setShowEditModal] = useState(false)
     const [showBuyNowSettingsModal, setShowBuyNowSettingsModal] = useState(false)
@@ -34,9 +35,16 @@ export default function StoreManageProducts() {
 
     const filteredProducts = products.filter((product) => {
         const isBuyNowEnabled = product.showBuyButton === true
-        if (buyNowFilter === 'enabled') return isBuyNowEnabled
-        if (buyNowFilter === 'disabled') return !isBuyNowEnabled
-        return true
+        const matchesBuyNow = buyNowFilter === 'enabled'
+            ? isBuyNowEnabled
+            : buyNowFilter === 'disabled'
+                ? !isBuyNowEnabled
+                : true
+
+        const audience = Array.isArray(product.targetAudience) ? product.targetAudience : []
+        const matchesAudience = audienceFilter === 'all' ? true : audience.includes(audienceFilter)
+
+        return matchesBuyNow && matchesAudience
     })
 
     const fetchStoreProducts = async () => {
@@ -220,6 +228,33 @@ export default function StoreManageProducts() {
                     Buy Now Off ({products.filter((p) => p.showBuyButton !== true).length})
                 </button>
             </div>
+
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+                <button
+                    onClick={() => setAudienceFilter('all')}
+                    className={`px-3 py-1.5 text-sm rounded-lg border transition ${audienceFilter === 'all' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
+                >
+                    Audience: All ({products.length})
+                </button>
+                <button
+                    onClick={() => setAudienceFilter('men')}
+                    className={`px-3 py-1.5 text-sm rounded-lg border transition ${audienceFilter === 'men' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
+                >
+                    Men ({products.filter((p) => Array.isArray(p.targetAudience) && p.targetAudience.includes('men')).length})
+                </button>
+                <button
+                    onClick={() => setAudienceFilter('women')}
+                    className={`px-3 py-1.5 text-sm rounded-lg border transition ${audienceFilter === 'women' ? 'bg-pink-600 text-white border-pink-600' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
+                >
+                    Women ({products.filter((p) => Array.isArray(p.targetAudience) && p.targetAudience.includes('women')).length})
+                </button>
+                <button
+                    onClick={() => setAudienceFilter('kids')}
+                    className={`px-3 py-1.5 text-sm rounded-lg border transition ${audienceFilter === 'kids' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
+                >
+                    Kids ({products.filter((p) => Array.isArray(p.targetAudience) && p.targetAudience.includes('kids')).length})
+                </button>
+            </div>
             <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-sm">
                 <table className="min-w-[1160px] w-full text-left text-sm">
                     <thead className="bg-slate-50 text-gray-700 uppercase tracking-wider">
@@ -323,7 +358,7 @@ export default function StoreManageProducts() {
                         {filteredProducts.length === 0 && (
                             <tr>
                                 <td colSpan={11} className="px-4 py-10 text-center text-slate-500">
-                                    No products found for this Buy Now filter.
+                                    No products found for current filters.
                                 </td>
                             </tr>
                         )}

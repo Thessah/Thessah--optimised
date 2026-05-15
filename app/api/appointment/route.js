@@ -59,7 +59,12 @@ export async function POST(request) {
     `
 
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.EMAIL_TO || 'support@quickfynd.com'
-    await sendMail({ to: adminEmail, subject, html })
+    try {
+      await sendMail({ to: adminEmail, subject, html })
+    } catch (emailError) {
+      console.error('Failed to send enquiry email:', emailError)
+      // Email failure should not block the success response
+    }
 
     return NextResponse.json({ success: true })
   } catch (err) {

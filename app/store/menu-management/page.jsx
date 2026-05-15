@@ -249,11 +249,50 @@ export default function MenuManagement() {
   const handleMegaLinkCategorySelect = (itemIdx, linkIdx, categoryId) => {
     const cat = categories.find((c) => c._id === categoryId)
     if (!cat) return
-    const linkUrl = `/category/${cat.slug || cat._id}`
+    const currentAudience = navMenuItems[itemIdx]?.megaMenu?.links?.[linkIdx]?.audience || 'all'
+    const basePath = `/category/${cat.slug || cat._id}`
+    const linkUrl = currentAudience !== 'all' ? `${basePath}?audience=${currentAudience}` : basePath
+    handleMegaLinkChange(itemIdx, linkIdx, 'categoryId', categoryId)
+    handleMegaLinkChange(itemIdx, linkIdx, 'audience', currentAudience)
     handleMegaLinkChange(itemIdx, linkIdx, 'link', linkUrl)
     if (!navMenuItems[itemIdx]?.megaMenu?.links?.[linkIdx]?.name) {
       handleMegaLinkChange(itemIdx, linkIdx, 'name', cat.name)
     }
+  }
+
+  const applyAudienceToLinkPath = (rawPath, audience) => {
+    if (!rawPath || typeof rawPath !== 'string') return rawPath
+    const [pathnamePart, queryString = ''] = rawPath.split('?')
+    const pathname = pathnamePart || ''
+    const params = new URLSearchParams(queryString)
+
+    if (audience && audience !== 'all') {
+      params.set('audience', audience)
+    } else {
+      params.delete('audience')
+    }
+
+    const nextQuery = params.toString()
+    return nextQuery ? `${pathname}?${nextQuery}` : pathname
+  }
+
+  const handleMegaLinkAudienceSelect = (itemIdx, linkIdx, audience) => {
+    const selectedAudience = ['all', 'men', 'women', 'kids'].includes(audience) ? audience : 'all'
+    const currentLink = navMenuItems[itemIdx]?.megaMenu?.links?.[linkIdx]?.link || ''
+    const categoryId = navMenuItems[itemIdx]?.megaMenu?.links?.[linkIdx]?.categoryId
+    handleMegaLinkChange(itemIdx, linkIdx, 'audience', selectedAudience)
+
+    let linkUrl = applyAudienceToLinkPath(currentLink, selectedAudience)
+
+    if (categoryId) {
+      const cat = categories.find((c) => c._id === categoryId)
+      if (cat) {
+        const basePath = `/category/${cat.slug || cat._id}`
+        linkUrl = applyAudienceToLinkPath(basePath, selectedAudience)
+      }
+    }
+
+    handleMegaLinkChange(itemIdx, linkIdx, 'link', linkUrl)
   }
 
   const addFooterLink = (sectionIndex) => {
@@ -679,16 +718,28 @@ export default function MenuManagement() {
                                 className="flex-1 min-w-0 px-2 py-1 text-sm border border-gray-300 rounded"
                               />
                               {categories.length > 0 && (
-                                <select
-                                  defaultValue=""
-                                  onChange={(e) => handleMegaLinkCategorySelect(index, li, e.target.value)}
-                                  className="px-2 py-1 text-xs border border-gray-300 rounded"
-                                >
-                                  <option value="">From category…</option>
-                                  {categories.map((cat) => (
-                                    <option key={cat._id} value={cat._id}>{cat.name}</option>
-                                  ))}
-                                </select>
+                                <>
+                                  <select
+                                    value={lnk.categoryId || ''}
+                                    onChange={(e) => handleMegaLinkCategorySelect(index, li, e.target.value)}
+                                    className="px-2 py-1 text-xs border border-gray-300 rounded"
+                                  >
+                                    <option value="">From category…</option>
+                                    {categories.map((cat) => (
+                                      <option key={cat._id} value={cat._id}>{cat.name}</option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    value={lnk.audience || 'all'}
+                                    onChange={(e) => handleMegaLinkAudienceSelect(index, li, e.target.value)}
+                                    className="px-2 py-1 text-xs border border-gray-300 rounded"
+                                  >
+                                    <option value="all">All</option>
+                                    <option value="men">Men</option>
+                                    <option value="women">Women</option>
+                                    <option value="kids">Kids</option>
+                                  </select>
+                                </>
                               )}
                               <button
                                 type="button"

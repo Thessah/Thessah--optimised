@@ -10,7 +10,26 @@ import axios from "axios";
 const StoreSidebar = ({storeInfo, isAdmin}) => {
     const [showSettings, setShowSettings] = useState(false);
     const [isOpen, setIsOpen] = useState(true);
+    const [enquiryCount, setEnquiryCount] = useState(0);
+    const [contactCount, setContactCount] = useState(0);
     const pathname = usePathname()
+    const { getToken } = useAuth();
+
+    useEffect(() => {
+        const fetchCounts = async () => {
+            try {
+                const token = await getToken()
+                if (!token) return
+                const [enquiryRes, contactRes] = await Promise.allSettled([
+                    axios.get('/api/store/enquiries', { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get('/api/store/contact-messages', { headers: { Authorization: `Bearer ${token}` } }),
+                ])
+                if (enquiryRes.status === 'fulfilled') setEnquiryCount((enquiryRes.value.data.enquiries || []).length)
+                if (contactRes.status === 'fulfilled') setContactCount((contactRes.value.data.messages || contactRes.value.data.contactMessages || []).length)
+            } catch {}
+        }
+        fetchCounts()
+    }, [pathname])
 
     // Regular seller links
     const sellerLinks = [
@@ -63,7 +82,17 @@ const StoreSidebar = ({storeInfo, isAdmin}) => {
                         ) : (
                             <Link key={index} href={link.href} className={`relative flex items-center gap-3 text-slate-500 hover:bg-slate-50 p-2.5 transition ${pathname === link.href && 'bg-slate-100 sm:text-slate-600'}`}>
                                 {link.icon && <link.icon size={18} className="sm:ml-5" />}
-                                <p className="max-sm:hidden">{link.name}</p>
+                                <p className="max-sm:hidden flex-1">{link.name}</p>
+                                {link.href === '/store/enquiries' && enquiryCount > 0 && (
+                                    <span className="max-sm:hidden ml-auto mr-3 min-w-[20px] h-5 px-1.5 rounded-full bg-orange-500 text-white text-[11px] font-bold flex items-center justify-center">
+                                        {enquiryCount}
+                                    </span>
+                                )}
+                                {link.href === '/store#contact-messages' && contactCount > 0 && (
+                                    <span className="max-sm:hidden ml-auto mr-3 min-w-[20px] h-5 px-1.5 rounded-full bg-orange-500 text-white text-[11px] font-bold flex items-center justify-center">
+                                        {contactCount}
+                                    </span>
+                                )}
                                 {pathname === link.href && <span className="absolute bg-green-500 right-0 top-1.5 bottom-1.5 w-1 sm:w-1.5 rounded-l"></span>}
                             </Link>
                         )
