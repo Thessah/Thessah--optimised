@@ -3,7 +3,7 @@ import authSeller from "@/middlewares/authSeller";
 import { requireFirebaseAuth } from "@/lib/firebase-auth-helper";
 import { NextResponse } from "next/server";
 
-const DEFAULT_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
+const DEFAULT_MODEL = process.env.OPENAI_PRODUCT_AUTOFILL_MODEL || process.env.OPENAI_MODEL || "gpt-4o-mini";
 
 function cleanJson(raw) {
     if (!raw) return "";
