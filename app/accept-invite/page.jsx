@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useAuth } from '@/lib/useAuth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function AcceptInvite() {
+function AcceptInviteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, getToken } = useAuth();
@@ -152,5 +152,22 @@ export default function AcceptInvite() {
 
       </div>
     </div>
+  );
+}
+
+export default function AcceptInvite() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Loading invitation...</p>
+          </div>
+        </div>
+      }
+    >
+      <AcceptInviteContent />
+    </Suspense>
   );
 }
