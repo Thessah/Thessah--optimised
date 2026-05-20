@@ -409,6 +409,9 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
         }
     }
 
+    const AI_IMAGE_MAX_DIMENSION = 1600
+    const AI_IMAGE_JPEG_QUALITY = 0.82
+
     const readFileAsBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader()
@@ -422,20 +425,59 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
         })
     }
 
+    const loadImageElement = (src) => {
+        return new Promise((resolve, reject) => {
+            const image = new Image()
+            image.onload = () => resolve(image)
+            image.onerror = () => reject(new Error('Failed to process image for AI autofill'))
+            image.src = src
+        })
+    }
+
+    const normalizeImageForAi = async (file) => {
+        const originalBase64 = await readFileAsBase64(file)
+        const sourceDataUrl = `data:${file.type || 'image/jpeg'};base64,${originalBase64}`
+
+        try {
+            const image = await loadImageElement(sourceDataUrl)
+            const scale = Math.min(1, AI_IMAGE_MAX_DIMENSION / Math.max(image.naturalWidth || 1, image.naturalHeight || 1))
+            const width = Math.max(1, Math.round((image.naturalWidth || 1) * scale))
+            const height = Math.max(1, Math.round((image.naturalHeight || 1) * scale))
+
+            const canvas = document.createElement('canvas')
+            canvas.width = width
+            canvas.height = height
+
+            const context = canvas.getContext('2d')
+            if (!context) throw new Error('Failed to prepare image for AI autofill')
+
+            context.drawImage(image, 0, 0, width, height)
+            const normalizedDataUrl = canvas.toDataURL('image/jpeg', AI_IMAGE_JPEG_QUALITY)
+            return {
+                base64Image: normalizedDataUrl.split(',')[1],
+                mimeType: 'image/jpeg',
+            }
+        } catch {
+            return {
+                base64Image: originalBase64,
+                mimeType: file.type || 'image/jpeg',
+            }
+        }
+    }
+
     const getPrimaryImagePayload = async () => {
         const firstImage = Object.values(images).find(Boolean)
         if (!firstImage) return null
 
         if (typeof firstImage === 'string') {
+            if (!/^https?:\/\//i.test(firstImage) && !/^data:image\//i.test(firstImage)) {
+                throw new Error('Primary image is not a valid public image URL. Re-upload the image and try again.')
+            }
             return { imageUrl: firstImage }
         }
 
         if (firstImage?.file) {
-            const base64Image = await readFileAsBase64(firstImage.file)
-            return {
-                base64Image,
-                mimeType: firstImage.file.type || 'image/jpeg',
-            }
+            return normalizeImageForAi(firstImage.file)
         }
 
         return null
