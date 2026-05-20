@@ -21,6 +21,7 @@ import { Table } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
+import { Loader2, Sparkles } from 'lucide-react'
 
 import { useAuth } from '@/lib/useAuth';
 
@@ -81,14 +82,14 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
     const [productInfo, setProductInfo] = useState({
         name: "",
         slug: "",
-        brand: "Thessah",
+        brand: "thessah",
         shortDescription: "",
         description: "",
         AED: "",
         price: "",
         category: [],
         sku: "",
-        stockQuantity: '',
+        stockQuantity: 100,
         colors: [],
         sizes: [],
         fastDelivery: false,
@@ -124,16 +125,21 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
     ])
     const [reviewInput, setReviewInput] = useState({ name: "", rating: 5, comment: "", image: null })
     const [loading, setLoading] = useState(false)
+    // ...existing code...
     const [useCalculatedPrice, setUseCalculatedPrice] = useState(false)
     const [liveMetalPrices, setLiveMetalPrices] = useState(null)
     const [fetchingPrice, setFetchingPrice] = useState(false)
     // Stones UI helpers (local only, not sent to API)
     const [stonePriceMode, setStonePriceMode] = useState('total') // 'total' | 'per-carat'
     const [stonePricePerCarat, setStonePricePerCarat] = useState('')
+    const [aiNotes, setAiNotes] = useState('')
+    const [aiLoading, setAiLoading] = useState(false)
 
     // Dynamic details (Metal / General)
-    const [metalDetails, setMetalDetails] = useState([]) // [{label, value}]
-    const [generalDetails, setGeneralDetails] = useState([]) // [{label, value}]
+    const [metalDetails, setMetalDetails] = useState([{label:'',value:''},{label:'',value:''},{label:'',value:''},{label:'',value:''},{label:'',value:''}]) // [{label, value}]
+    const [generalDetails, setGeneralDetails] = useState([{label:'',value:''},{label:'',value:''},{label:'',value:''},{label:'',value:''},{label:'',value:''}]) // [{label, value}]
+
+    // ...existing code...
 
     // Fetch live metal prices
     const fetchLiveMetalPrice = async (metalType, karat) => {
@@ -297,7 +303,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
             setProductInfo({
                 name: product.name || "",
                 slug: product.slug || "",
-                brand: product.brand || "",
+                brand: "thessah",
                 shortDescription: product.shortDescription || "",
                 description: product.description || "",
                 AED: product.AED || "",
@@ -395,7 +401,188 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                 slug: slug 
             }))
         } else {
+            if (name === 'brand') {
+                setProductInfo(prev => ({ ...prev, brand: 'thessah' }))
+                return
+            }
             setProductInfo(prev => ({ ...prev, [name]: value }))
+        }
+    }
+
+    const readFileAsBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => {
+                const result = typeof reader.result === 'string' ? reader.result : ''
+                const base64 = result.includes(',') ? result.split(',')[1] : result
+                resolve(base64)
+            }
+            reader.onerror = () => reject(new Error('Failed to read image file'))
+            reader.readAsDataURL(file)
+        })
+    }
+
+    const getPrimaryImagePayload = async () => {
+        const firstImage = Object.values(images).find(Boolean)
+        if (!firstImage) return null
+
+        if (typeof firstImage === 'string') {
+            return { imageUrl: firstImage }
+        }
+
+        if (firstImage?.file) {
+            const base64Image = await readFileAsBase64(firstImage.file)
+            return {
+                base64Image,
+                mimeType: firstImage.file.type || 'image/jpeg',
+            }
+        }
+
+        return null
+    }
+
+    const applyAiDraft = async () => {
+        try {
+            const imagePayload = await getPrimaryImagePayload()
+            if (!imagePayload) {
+                toast.error('Please upload at least one product image first')
+                return
+            }
+
+            let token = await getToken()
+            if (!token) token = await getToken(true)
+            if (!token) {
+                toast.error('Authentication required. Please sign in again.')
+                return
+            }
+
+            setAiLoading(true)
+            const { data } = await axios.post('/api/store/ai', {
+                ...imagePayload,
+                notes: aiNotes,
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+
+            console.log('[AI Response]', data)
+
+            if (!data || Object.keys(data).length === 0) {
+                toast.error('AI returned no data. Please try again or provide more context in notes.')
+                setAiLoading(false)
+                return
+            }
+
+            const audienceSynonymMap = { woman: 'women', female: 'women', ladies: 'women', girl: 'women', man: 'men', male: 'men', gentleman: 'men', boy: 'men', children: 'kids', child: 'kids', unisex: 'women' }
+            const normalizedAudience = Array.isArray(data?.targetAudience)
+                ? [...new Set(data.targetAudience
+                    .map((item) => {
+                        const v = String(item).trim().toLowerCase()
+                        return audienceSynonymMap[v] || v
+                    })
+                    .filter((item) => ['men', 'women', 'kids'].includes(item)))]
+                : []
+
+            const normalizedTags = Array.isArray(data?.tags)
+                ? [...new Set(data.tags.map((item) => String(item).trim()).filter(Boolean))]
+                : []
+
+            const allCategoryNames = dbCategories
+                .flatMap((cat) => [
+                    ...(!cat.parentId ? [cat] : []),
+                    ...(cat.children || [])
+                ])
+                .filter((cat) => cat && cat.name)
+                .map((cat) => cat.name)
+
+            console.log('[Categories Available]', allCategoryNames)
+            console.log('[Category Suggestions from AI]', data?.categorySuggestions)
+
+            const categorySet = new Set(
+                Array.isArray(data?.categorySuggestions)
+                    ? data.categorySuggestions
+                        .map((suggestion) => {
+                            const text = String(suggestion || '').trim().toLowerCase()
+                            if (!text) return null
+                            // 1. exact match
+                            let match = allCategoryNames.find((name) => name.toLowerCase() === text)
+                            // 2. DB category name contained within AI suggestion (e.g. "Ring" in "Gold Ring")
+                            if (!match) match = allCategoryNames.find((name) => text.includes(name.toLowerCase()))
+                            // 3. AI suggestion contained within DB category name
+                            if (!match) match = allCategoryNames.find((name) => name.toLowerCase().includes(text))
+                            console.log(`[Category Match] "${text}" -> "${match || 'NO MATCH'}"`)
+                            return match || null
+                        })
+                        .filter(Boolean)
+                    : []
+            )
+
+            console.log('[Normalized Result]', { 
+                name: data?.name,
+                categories: Array.from(categorySet),
+                audience: normalizedAudience,
+                description: data?.shortDescription,
+                tags: normalizedTags,
+                metalDetails: data?.metalDetails
+            })
+
+            const aiName = data?.name || ''
+            const aiSlug = aiName
+                ? aiName.toLowerCase().trim()
+                    .replace(/[^\w\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .replace(/^-+|-+$/g, '')
+                : ''
+
+            setProductInfo((prev) => ({
+                ...prev,
+                name: aiName || prev.name,
+                slug: aiSlug || prev.slug,
+                brand: 'thessah',
+                shortDescription: data?.shortDescription || prev.shortDescription,
+                description: data?.description ? `<p>${String(data.description).replace(/\n+/g, '</p><p>')}</p>` : prev.description,
+                category: categorySet.size > 0 ? Array.from(categorySet) : prev.category,
+                targetAudience: normalizedAudience.length > 0 ? normalizedAudience : prev.targetAudience,
+                tags: normalizedTags.length > 0 ? normalizedTags : prev.tags,
+            }))
+
+            if (data?.description) {
+                const descriptionHtml = `<p>${String(data.description).replace(/\n+/g, '</p><p>')}</p>`
+                editor?.commands.setContent(descriptionHtml, false)
+            }
+
+            if (Array.isArray(data?.metalDetails) && data.metalDetails.length > 0) {
+                const padded = [...data.metalDetails]
+                while (padded.length < 5) padded.push({ label: '', value: '' })
+                setMetalDetails(padded)
+            }
+            if (Array.isArray(data?.generalDetails) && data.generalDetails.length > 0) {
+                const filteredGeneral = data.generalDetails.filter((row) => String(row?.label || '').toLowerCase() !== 'brand')
+                const padded = [...filteredGeneral]
+                while (padded.length < 5) padded.push({ label: '', value: '' })
+                setGeneralDetails(padded)
+            }
+
+            // Show success message with details of what was filled
+            const messages = []
+            if (data?.name) messages.push('name')
+            if (categorySet.size > 0) messages.push(`${categorySet.size} category(ies)`)
+            if (normalizedAudience.length > 0) messages.push(`audience (${normalizedAudience.join(', ')})`)
+            if (data?.shortDescription) messages.push('short description')
+            if (data?.description) messages.push('detailed description')
+            if (data?.metalDetails?.length > 0) messages.push('metal details')
+            if (normalizedTags.length > 0) messages.push('tags')
+            
+            const successMsg = messages.length > 0 
+                ? `✨ Autofilled: ${messages.join(', ')}`
+                : '✨ Product details autofilled from image'
+            
+            toast.success(successMsg)
+        } catch (error) {
+            console.error('[AI Error]', error)
+            toast.error(error?.response?.data?.error || error.message || 'Failed to auto fill details')
+        } finally {
+            setAiLoading(false)
         }
     }
 
@@ -404,6 +591,8 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
         const previewUrl = URL.createObjectURL(file)
         setImages(prev => ({ ...prev, [key]: { file, preview: previewUrl } }))
     }
+
+    // ...existing code...
 
     const handleImageDelete = async (key) => {
         setImages(prev => {
@@ -444,6 +633,8 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
     const removeReview = (index) => {
         setProductInfo(prev => ({ ...prev, reviews: prev.reviews.filter((_, i) => i !== index) }))
     }
+
+    // ...existing code...
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
@@ -650,7 +841,8 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Brand</label>
-                                <input name="brand" value={productInfo.brand} onChange={onChangeHandler} className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition" placeholder="Brand (optional)" />
+                                <input name="brand" value={productInfo.brand} onChange={onChangeHandler} readOnly className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 bg-slate-50 text-slate-700" placeholder="thessah" />
+                                <p className="text-xs text-slate-500 mt-2">Brand is fixed to thessah.</p>
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Category * <span className="text-xs font-normal text-slate-400">(select one or more)</span></label>
@@ -730,7 +922,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                     value={productInfo.stockQuantity ?? ''} 
                                     onChange={onChangeHandler} 
                                     className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition" 
-                                    placeholder="0" 
+                                    placeholder="100" 
                                     min="0"
                                 />
                             </div>
@@ -1029,7 +1221,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                         <div className="space-y-6">
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Short Description</label>
-                                <input name="shortDescription" value={productInfo.shortDescription} onChange={onChangeHandler} className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition" placeholder="Brief overview (e.g., Gold Necklace for Wedding)" />
+                                <textarea name="shortDescription" value={productInfo.shortDescription} onChange={onChangeHandler} rows={5} className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition resize-y" placeholder="Brief overview (e.g., Gold Necklace for Wedding)" />
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Tags</label>
@@ -1275,6 +1467,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                             <span className="bg-cyan-500 text-white px-3 py-1 rounded-full text-sm">7</span>
                             Product Images
                         </h2>
+                        {/* ...existing code... */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {Object.keys(images).map((key) => {
                                 const img = images[key]
@@ -1315,6 +1508,28 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                                     </div>
                                 )
                             })}
+                        </div>
+
+                        <div className="mt-8 border-2 border-emerald-200 bg-emerald-50/40 rounded-xl p-4 space-y-3">
+                            <label className="block text-sm font-semibold text-emerald-800">Extra details for AI (optional)</label>
+                            <input
+                                value={aiNotes}
+                                onChange={(e) => setAiNotes(e.target.value)}
+                                className="w-full border-2 border-slate-300 rounded-lg px-4 py-3 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition bg-white"
+                                placeholder="e.g. wedding wear, daily wear, 22K yellow gold"
+                            />
+                            <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
+                                <button
+                                    type="button"
+                                    onClick={applyAiDraft}
+                                    disabled={aiLoading}
+                                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-semibold transition"
+                                >
+                                    {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                    {aiLoading ? 'Auto Filling...' : 'Auto Fill Details from Image'}
+                                </button>
+                                <p className="text-sm text-slate-600">AI uses image + notes. Brand stays thessah. Price fields stay manual.</p>
+                            </div>
                         </div>
                     </div>
 

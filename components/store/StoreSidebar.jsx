@@ -1,18 +1,20 @@
 "use client"
 import { usePathname } from "next/navigation"
-import { HomeIcon, LayoutListIcon, SquarePenIcon, SquarePlusIcon, StarIcon, FolderIcon, TicketIcon, TruckIcon, RefreshCw, User as UserIcon, Users as UsersIcon } from "lucide-react"
+import { HomeIcon, LayoutListIcon, SquarePenIcon, SquarePlusIcon, StarIcon, FolderIcon, TicketIcon, TruckIcon, RefreshCw, SparklesIcon, User as UserIcon, Users as UsersIcon } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/useAuth";
 import axios from "axios";
 
+import { useRouter } from "next/navigation"
+
 const StoreSidebar = ({storeInfo, isAdmin}) => {
-    const [showSettings, setShowSettings] = useState(false);
     const [isOpen, setIsOpen] = useState(true);
     const [enquiryCount, setEnquiryCount] = useState(0);
     const [contactCount, setContactCount] = useState(0);
     const pathname = usePathname()
+    const router = useRouter()
     const { getToken } = useAuth();
 
     useEffect(() => {
@@ -36,6 +38,7 @@ const StoreSidebar = ({storeInfo, isAdmin}) => {
         { name: 'Dashboard', href: '/store', icon: HomeIcon },
         { name: 'Categories', href: '/store/categories', icon: FolderIcon },
         { name: 'Add Product', href: '/store/add-product', icon: SquarePlusIcon },
+        // ...existing code...
         { name: 'Manage Product', href: '/store/manage-product', icon: SquarePenIcon },
         { name: 'Coupons', href: '/store/coupons', icon: TicketIcon },
         { name: 'Shipping', href: '/store/shipping', icon: TruckIcon },
@@ -102,15 +105,15 @@ const StoreSidebar = ({storeInfo, isAdmin}) => {
             <div className="mt-auto p-4 border-t border-slate-200 flex flex-col items-center">
                 {/* Desktop: full button, Mobile: icon only */}
                 <button
+                    onClick={() => router.push('/store/settings')}
                     className="w-44 px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-blue-600 hover:text-white transition max-sm:hidden"
-                    onClick={() => setShowSettings(true)}
                 >
                     Settings
                 </button>
                 <button
+                    onClick={() => router.push('/store/settings')}
                     className="sm:hidden p-2 rounded-full bg-slate-200 text-slate-700 hover:bg-blue-600 hover:text-white transition"
                     aria-label="Settings"
-                    onClick={() => setShowSettings(true)}
                 >
                     {/* Lucide settings icon */}
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -118,111 +121,8 @@ const StoreSidebar = ({storeInfo, isAdmin}) => {
                     </svg>
                 </button>
             </div>
-            {showSettings && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-95" style={{backdropFilter: 'blur(2px)'}}>
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-0 relative flex flex-col">
-                        <button onClick={() => setShowSettings(false)} className="absolute top-3 right-4 text-2xl text-slate-400 hover:text-slate-700">&times;</button>
-                        <SimpleSettingsModal />
-                    </div>
-                </div>
-            )}
         </aside>
     )
-}
-
-
-function SimpleSettingsModal() {
-    const { user, getToken } = useAuth();
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [image, setImage] = useState("");
-    const [imageFile, setImageFile] = useState(null);
-    const [saving, setSaving] = useState(false);
-    const [message, setMessage] = useState("");
-
-    // Populate fields when user is loaded or changes
-    useEffect(() => {
-        setName(user?.displayName || user?.name || "");
-        setEmail(user?.email || "");
-        setImage(user?.photoURL || user?.image || "");
-    }, [user]);
-
-    // Live preview for uploaded image, fallback to current or first letter avatar
-    let imagePreview = null;
-    if (imageFile) {
-        imagePreview = URL.createObjectURL(imageFile);
-    } else if (image) {
-        imagePreview = image;
-    }
-
-    const handleProfileUpdate = async (e) => {
-        e.preventDefault();
-        setSaving(true);
-        setMessage("");
-        try {
-            const token = await getToken();
-            let imageUrl = image;
-            if (imageFile) {
-                // Upload image to server or imagekit (implement as needed)
-                const formData = new FormData();
-                formData.append("image", imageFile);
-                const res = await axios.post("/api/store/profile/upload-image", formData, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                imageUrl = res.data.url;
-            }
-            await axios.post("/api/store/profile/update", { name, image: imageUrl, email }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setMessage("Profile updated successfully!");
-            setImage(imageUrl);
-            setImageFile(null);
-        } catch (err) {
-            setMessage(err?.response?.data?.error || err.message);
-        }
-        setSaving(false);
-    };
-
-    return (
-        <div className="flex flex-col gap-4 p-8">
-            {/* Profile form */}
-            <form onSubmit={handleProfileUpdate} className="flex flex-col gap-4">
-            <div className="flex flex-col items-center gap-2 mb-4">
-                <div className="relative w-24 h-24">
-                    {imagePreview ? (
-                        <img src={imagePreview} alt="Profile" className="w-24 h-24 rounded-full object-cover border shadow bg-slate-100" />
-                    ) : (
-                        <span className="w-24 h-24 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold text-4xl border shadow bg-slate-100 select-none">
-                            {(name?.[0] || email?.[0] || 'U').toUpperCase()}
-                        </span>
-                    )}
-                    <label className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1 cursor-pointer shadow-lg" title="Upload image">
-                        <input type="file" accept="image/*" className="hidden" onChange={e => {
-                            if (e.target.files && e.target.files[0]) setImageFile(e.target.files[0]);
-                        }} />
-                        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 16v-8m0 0l-3 3m3-3l3 3"/></svg>
-                    </label>
-                </div>
-                <div className="text-center mt-2">
-                    <div className="font-semibold text-lg">{name || "Your Name"}</div>
-                    <div className="text-slate-500 text-sm">{email || "your@email.com"}</div>
-                </div>
-            </div>
-            <label className="flex flex-col gap-1">
-                Name
-                <input type="text" value={name} onChange={e => setName(e.target.value)} className="border p-2 rounded" required />
-            </label>
-            <label className="flex flex-col gap-1">
-                Email
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="border p-2 rounded" required />
-            </label>
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded mt-2" disabled={saving}>
-                {saving ? "Saving..." : "Save Changes"}
-            </button>
-            {message && <div className="text-green-600 mt-2 text-center">{message}</div>}
-            </form>
-        </div>
-    );
 }
 
 export default StoreSidebar

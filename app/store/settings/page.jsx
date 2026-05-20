@@ -95,7 +95,7 @@ export default function StoreSettings() {
     <div className="flex min-h-screen">
       <div className="w-56 bg-slate-50 border-r flex flex-col gap-2 p-6">
         <Link href="/store/settings" className="mb-2 px-4 py-2 rounded bg-blue-600 text-white text-center hover:bg-blue-700 transition">Settings</Link>
-        <Link href="/store/settings/users" className="px-4 py-2 rounded bg-slate-200 text-slate-700 text-center hover:bg-slate-300 transition">Manage Users</Link>
+        <Link href="/store/settings/team-members" className="px-4 py-2 rounded bg-slate-200 text-slate-700 text-center hover:bg-slate-300 transition">Team Members</Link>
       </div>
       <div className="flex-1 flex flex-col items-center justify-start mt-10 p-6">
         <div className="max-w-2xl w-full space-y-6">
