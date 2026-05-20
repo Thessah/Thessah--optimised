@@ -128,6 +128,34 @@ export async function POST(request) {
         return NextResponse.json(draft);
     } catch (error) {
         console.error("[STORE AI]", error);
-        return NextResponse.json({ error: error?.message || "Failed to generate AI draft" }, { status: 400 });
+        const message = String(error?.message || "Failed to generate AI draft");
+        const upstreamStatus = Number(error?.status || error?.response?.status || 0);
+
+        if (upstreamStatus >= 400 && upstreamStatus <= 599) {
+            return NextResponse.json({ error: message }, { status: upstreamStatus });
+        }
+
+        if (
+            message.includes("Authorization header missing") ||
+            message.includes("No token provided") ||
+            message.includes("Invalid or expired token") ||
+            message.includes("Firebase Admin Auth not available")
+        ) {
+            return NextResponse.json({ error: message }, { status: 401 });
+        }
+
+        if (message.includes("OpenAI is not configured") || message.includes("AI is disabled")) {
+            return NextResponse.json({ error: message }, { status: 503 });
+        }
+
+        if (
+            message.includes("Failed to parse AI response") ||
+            message.includes("AI returned empty response") ||
+            message.includes("AI returned invalid JSON")
+        ) {
+            return NextResponse.json({ error: message }, { status: 502 });
+        }
+
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }
