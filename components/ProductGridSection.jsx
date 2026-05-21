@@ -113,7 +113,7 @@ export default function ProductGridSection({ title, products = [], viewAllPath =
                   </>
                 )}
               </div>
-              <div className="text-xs font-medium text-gray-800 truncate mb-1">{product.name}</div>
+              <div className="text-sm sm:text-base font-casad font-semibold text-gray-800 truncate mb-1">{product.name}</div>
               {product.label && (
                 <div className={`text-xs font-semibold rounded px-1.5 py-0.5 mt-auto ${
                   product.labelType === "offer"

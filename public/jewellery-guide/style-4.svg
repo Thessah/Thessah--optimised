@@ -1,0 +1,13 @@
+<svg width="800" height="520" viewBox="0 0 800 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg4" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F7EAD7"/>
+      <stop offset="1" stop-color="#EAC8A0"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="520" fill="url(#bg4)"/>
+  <rect x="98" y="78" width="604" height="364" rx="24" fill="#FCF4E7" opacity="0.72"/>
+  <path d="M400 160C354 160 314 196 314 242V326H486V242C486 196 446 160 400 160Z" fill="#C08D52"/>
+  <circle cx="400" cy="244" r="30" fill="#F7EAD7" stroke="#C08D52" stroke-width="8"/>
+  <text x="64" y="484" font-family="Georgia, serif" font-size="42" fill="#6D4D2A">Less is more</text>
+</svg>

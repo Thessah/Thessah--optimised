@@ -761,9 +761,30 @@ export default function MenuManagement() {
                           {[0, 1, 2].map((imgIdx) => {
                             const img = getMegaMenu(item).images?.[imgIdx] || {}
                             const uploading = uploadingMegaImageIndex === `${index}-${imgIdx}`
+
+                            // Remove image handler
+                            const handleRemoveMegaImage = () => {
+                              const updated = [...navMenuItems]
+                              const mm = { ...getMegaMenu(updated[index]) }
+                              mm.images = [...(mm.images || [])]
+                              mm.images[imgIdx] = {}
+                              updated[index] = { ...updated[index], megaMenu: mm }
+                              setNavMenuItems(updated)
+                              setHasNavChanges(true)
+                            }
+
                             return (
                               <div key={imgIdx} className="bg-white border border-gray-200 rounded-lg p-2 space-y-2">
-                                <p className="text-xs font-medium text-gray-500">Image {imgIdx + 1}</p>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-xs font-medium text-gray-500">Image {imgIdx + 1}</p>
+                                  {img.url && (
+                                    <button
+                                      type="button"
+                                      onClick={handleRemoveMegaImage}
+                                      className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                                    >Remove</button>
+                                  )}
+                                </div>
                                 {img.url && (
                                   <img src={img.url} alt="" className="w-full h-24 object-cover rounded" />
                                 )}
@@ -784,6 +805,7 @@ export default function MenuManagement() {
                                   value={img.label || ''}
                                   onChange={(e) => handleMegaImageChange(index, imgIdx, 'label', e.target.value)}
                                   className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                                  disabled={!img.url}
                                 />
                                 <input
                                   type="text"
@@ -791,6 +813,7 @@ export default function MenuManagement() {
                                   value={img.link || ''}
                                   onChange={(e) => handleMegaImageChange(index, imgIdx, 'link', e.target.value)}
                                   className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                                  disabled={!img.url}
                                 />
                                 {categories.length > 0 && (
                                   <select
@@ -802,6 +825,7 @@ export default function MenuManagement() {
                                       if (!img.label) handleMegaImageChange(index, imgIdx, 'label', cat.name)
                                     }}
                                     className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                                    disabled={!img.url}
                                   >
                                     <option value="">Set link from category…</option>
                                     {categories.map((cat) => (

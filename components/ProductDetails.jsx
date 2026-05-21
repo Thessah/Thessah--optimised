@@ -802,7 +802,10 @@ const ProductDetails = ({ product, reviews = [] }) => {
 
               {/* Right: Product Image and Actions */}
               <div className="lg:col-span-1 flex flex-col items-center gap-4">
-                <div className="w-full text-right text-xs text-gray-500">SKU ID : {product.sku || 'NA'}</div>
+                <div className="w-full text-right text-xs text-gray-500 space-y-1">
+                  <p>SKU ID : {product.sku || 'NA'}</p>
+                  {product.barcode && <p>Barcode : {product.barcode}</p>}
+                </div>
                 <div className="w-full flex justify-center">
                   <div className="bg-white rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center aspect-square w-full max-w-xs">
                     <Image

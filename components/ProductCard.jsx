@@ -49,6 +49,7 @@ const ProductCard = ({ product }) => {
         ? reviews.length
         : (typeof product.ratingCount === 'number' ? product.ratingCount : 0);
     const ratingValue = Math.max(0, Math.min(5, Number(averageRating) || 0));
+    const hasReviews = ratingCount > 0;
 
     // Calculate discount percentage
     const discount = product.AED && product.AED > product.price
@@ -126,29 +127,31 @@ const ProductCard = ({ product }) => {
                 {/* Product Details */}
                 <div className="flex flex-col p-3.5 gap-1.5">
                     {/* Product Name */}
-                    <h3 className="text-[17px] font-semibold tracking-tight text-slate-900 line-clamp-2 leading-[1.25]">
+                    <h3 className="text-[20px] font-casad font-semibold tracking-tight text-slate-900 line-clamp-2 leading-[1.2]">
                         {product.name}
                     </h3>
                     {/* Reviews */}
-                    <div
-                        className="flex items-center gap-2"
-                        aria-label={`Rating ${ratingCount > 0 ? ratingValue.toFixed(1) : '0.0'} out of 5 from ${ratingCount} reviews`}
-                    >
-                        <div className="flex items-center gap-0.5">
-                            {[1, 2, 3, 4, 5].map((star) => {
-                                const isFilled = ratingCount > 0 && star <= Math.round(ratingValue)
-                                return (
-                                    <StarIcon
-                                        key={star}
-                                        size={14}
-                                        className={isFilled ? 'text-amber-500' : 'text-slate-300'}
-                                        fill={isFilled ? 'currentColor' : 'none'}
-                                    />
-                                )
-                            })}
+                    {hasReviews && (
+                        <div
+                            className="flex items-center gap-2"
+                            aria-label={`Rating ${ratingValue.toFixed(1)} out of 5 from ${ratingCount} reviews`}
+                        >
+                            <div className="flex items-center gap-0.5">
+                                {[1, 2, 3, 4, 5].map((star) => {
+                                    const isFilled = star <= Math.round(ratingValue)
+                                    return (
+                                        <StarIcon
+                                            key={star}
+                                            size={14}
+                                            className={isFilled ? 'text-amber-500' : 'text-slate-300'}
+                                            fill={isFilled ? 'currentColor' : 'none'}
+                                        />
+                                    )
+                                })}
+                            </div>
+                            <span className="text-xs font-medium text-slate-500">({ratingCount})</span>
                         </div>
-                        <span className="text-xs font-medium text-slate-500">({ratingCount})</span>
-                    </div>
+                    )}
                     {/* Price */}
                     {showPriceBlock && (
                         <div className="flex items-end gap-2">

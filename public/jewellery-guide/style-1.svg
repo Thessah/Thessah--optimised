@@ -1,0 +1,16 @@
+<svg width="800" height="520" viewBox="0 0 800 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F6E8D3"/>
+      <stop offset="1" stop-color="#EED7B3"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="520" fill="url(#bg1)"/>
+  <circle cx="160" cy="120" r="95" fill="#FBF2E4"/>
+  <circle cx="675" cy="430" r="130" fill="#E5C9A0" opacity="0.6"/>
+  <rect x="220" y="250" width="360" height="30" rx="15" fill="#A97841"/>
+  <circle cx="320" cy="265" r="22" fill="#F6E8D3" stroke="#A97841" stroke-width="6"/>
+  <circle cx="400" cy="265" r="22" fill="#F6E8D3" stroke="#A97841" stroke-width="6"/>
+  <circle cx="480" cy="265" r="22" fill="#F6E8D3" stroke="#A97841" stroke-width="6"/>
+  <text x="36" y="482" font-family="Georgia, serif" font-size="42" fill="#6D4D2A">Layer with intention</text>
+</svg>

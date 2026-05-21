@@ -46,6 +46,7 @@ const ProductCard = ({ product }) => {
   // Use backend response fields
   const ratingValue = Math.round(product.averageRating || 0);
   const reviewCount = product.ratingCount || 0;
+  const hasReviews = reviewCount > 0;
 
   // Split price into integer and decimal
   const [intPrice, decPrice] = (product.price?.toFixed(2) || '0.00').split('.')
@@ -116,11 +117,11 @@ const ProductCard = ({ product }) => {
       <div className="mt-2 flex flex-col flex-grow justify-between p-3">
         {/* Title + Rating */}
         <div>
-          <h3 className="text-sm font-medium text-gray-800 line-clamp-2 leading-snug">
+          <h3 className="text-base sm:text-lg font-casad font-semibold text-gray-800 line-clamp-2 leading-snug">
             {productName}
           </h3>
           <div className="flex items-center mt-1">
-            {reviewCount > 0 ? (
+            {hasReviews && (
               <>
                 {[...Array(5)].map((_, i) => (
                   <FaStar
@@ -131,8 +132,6 @@ const ProductCard = ({ product }) => {
                 ))}
                 <span className="text-gray-500 text-xs ml-1">({reviewCount})</span>
               </>
-            ) : (
-              <span className="text-xs text-gray-400 ml-1">No reviews</span>
             )}
           </div>
         </div>

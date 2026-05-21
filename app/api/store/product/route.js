@@ -29,6 +29,39 @@ const uploadImages = async (images) => {
     );
 };
 
+const normalizeSlug = (value, fallback = 'product') => {
+    const raw = String(value || '').trim().toLowerCase();
+    const cleaned = raw
+        .replace(/[^a-z0-9-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/(^-|-$)+/g, '');
+    return cleaned || fallback;
+};
+
+const generateUniqueSlug = async (baseSlug, excludeId = null) => {
+    const base = normalizeSlug(baseSlug);
+
+    // First try the base slug as-is.
+    const existingBase = await Product.findOne({ slug: base }).select('_id').lean();
+    if (!existingBase || (excludeId && existingBase._id.toString() === String(excludeId))) {
+        return base;
+    }
+
+    // If taken, append incremental suffixes: slug-2, slug-3, ...
+    let counter = 2;
+    while (counter < 10000) {
+        const candidate = `${base}-${counter}`;
+        const existing = await Product.findOne({ slug: candidate }).select('_id').lean();
+        if (!existing || (excludeId && existing._id.toString() === String(excludeId))) {
+            return candidate;
+        }
+        counter += 1;
+    }
+
+    // Final fallback with timestamp if suffix range is unexpectedly exhausted.
+    return `${base}-${Date.now()}`;
+};
+
 // POST: Create a new product
 export async function POST(request) {
     try {
@@ -62,6 +95,7 @@ export async function POST(request) {
         const description = formData.get("description");
         const category = formData.get("category");
         const sku = formData.get("sku") || null;
+        const barcode = formData.get("barcode")?.toString().trim() || null;
         const images = formData.getAll("images");
         // Tags: accept JSON string or comma-separated
         let tagsRaw = formData.get("tags");
@@ -103,24 +137,9 @@ export async function POST(request) {
         // Base pricing (used when no variants)
         const AED = Number(formData.get("AED"));
         const price = Number(formData.get("price"));
-        // Slug from form (manual or auto)
-        let slug = formData.get("slug")?.toString().trim() || "";
-        if (slug) {
-            // Clean up slug: only allow a-z, 0-9, dash
-            slug = slug.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
-            slug = slug.replace(/(^-|-$)+/g, '');
-        } else {
-            // Generate slug from name
-            slug = name
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)+/g, '');
-        }
-        // Ensure slug is unique
-        const existing = await Product.findOne({ slug }).lean();
-        if (existing) {
-            return NextResponse.json({ error: "Slug already exists. Please use a different slug." }, { status: 400 });
-        }
+        // Slug from form (manual) or generated from product name, then auto-uniquified.
+        const requestedSlug = formData.get("slug")?.toString().trim() || name;
+        const slug = await generateUniqueSlug(requestedSlug);
 
         // Validate core fields
         if (!name || !description || !category || images.length < 1) {
@@ -212,6 +231,7 @@ export async function POST(request) {
             price: finalPrice,
             category,
             sku,
+            barcode,
             images: imagesUrl,
             hasVariants,
             variants,
@@ -286,6 +306,7 @@ export async function PUT(request) {
         const description = formData.get("description");
         const category = formData.get("category");
         const sku = formData.get("sku");
+        const barcodeRaw = formData.get("barcode");
         const images = formData.getAll("images");
         const stockQuantity = formData.get("stockQuantity") ? Number(formData.get("stockQuantity")) : undefined;
         // Variants support
@@ -336,8 +357,7 @@ export async function PUT(request) {
         const fastDelivery = String(formData.get("fastDelivery") || "").toLowerCase() === "true";
         let slug = formData.get("slug")?.toString().trim() || "";
         if (slug) {
-            slug = slug.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
-            slug = slug.replace(/(^-|-$)+/g, '');
+            slug = normalizeSlug(slug);
         }
 
 
@@ -446,6 +466,11 @@ export async function PUT(request) {
             showEnquiryButton,
         };
 
+        if (barcodeRaw !== null) {
+            const barcode = String(barcodeRaw).trim();
+            updateData.barcode = barcode || null;
+        }
+
         if (tags !== undefined) {
             updateData.tags = tags;
         }
@@ -458,11 +483,7 @@ export async function PUT(request) {
             updateData.stockQuantity = stockQuantity;
         }
         if (slug && slug !== product.slug) {
-            const existing = await Product.findOne({ slug }).lean();
-            if (existing && existing._id.toString() !== productId) {
-                return NextResponse.json({ error: "Slug already exists. Please use a different slug." }, { status: 400 });
-            }
-            updateData.slug = slug;
+            updateData.slug = await generateUniqueSlug(slug, productId);
         }
         product = await Product.findByIdAndUpdate(
             productId,

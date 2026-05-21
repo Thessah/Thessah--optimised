@@ -10,6 +10,7 @@ const ProductSchema = new mongoose.Schema({
   images: [String],
   category: String,
   sku: String,
+  barcode: String,
   inStock: { type: Boolean, default: true },
   stockQuantity: { type: Number, default: 0 },
   hasVariants: { type: Boolean, default: false },
@@ -61,4 +62,11 @@ try {
   // Ignore if index already exists or fails in certain environments
 }
 
-export default mongoose.models.Product || mongoose.model("Product", ProductSchema);
+const ExistingProductModel = mongoose.models.Product;
+
+// Hot-reload safeguard: if model is already compiled, ensure barcode path exists.
+if (ExistingProductModel && !ExistingProductModel.schema.path('barcode')) {
+  ExistingProductModel.schema.add({ barcode: String });
+}
+
+export default ExistingProductModel || mongoose.model("Product", ProductSchema);

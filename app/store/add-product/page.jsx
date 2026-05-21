@@ -89,6 +89,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
         price: "",
         category: [],
         sku: "",
+        barcode: "",
         stockQuantity: 100,
         colors: [],
         sizes: [],
@@ -310,6 +311,7 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                 price: product.price || "",
                 category: product.category ? (Array.isArray(product.category) ? product.category : product.category.split(',').map(s => s.trim()).filter(Boolean)) : [],
                 sku: product.sku || "",
+                barcode: product.barcode || "",
                 stockQuantity: product.stockQuantity ?? '',
                 colors: product.colors || [],
                 sizes: product.sizes || [],
@@ -924,6 +926,10 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">SKU</label>
                                 <input name="sku" value={productInfo.sku || ""} onChange={onChangeHandler} className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition" placeholder="Stock Keeping Unit (optional)" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Barcode Number</label>
+                                <input name="barcode" value={productInfo.barcode || ""} onChange={onChangeHandler} className="w-full border-2 border-slate-200 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition" placeholder="Barcode number (optional)" />
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">This Product Is For</label>

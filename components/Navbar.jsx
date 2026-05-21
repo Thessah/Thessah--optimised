@@ -1249,7 +1249,7 @@ const Navbar = () => {
                               <img
                                 src={item.icon}
                                 alt=""
-                                className="w-5 h-5 object-contain opacity-80"
+                                className="w-[22px] h-[22px] object-contain opacity-80"
                                 aria-hidden="true"
                               />
                             )}
@@ -1390,7 +1390,7 @@ const Navbar = () => {
                               <img
                                 src={item.icon}
                                 alt=""
-                                className="w-4 h-4 object-contain opacity-80"
+                                className="w-[18px] h-[18px] object-contain opacity-80"
                                 aria-hidden="true"
                               />
                             )}
@@ -1422,7 +1422,7 @@ const Navbar = () => {
                               <img
                                 src={item.icon}
                                 alt=""
-                                className="w-5 h-5 object-contain opacity-80"
+                                className="w-[22px] h-[22px] object-contain opacity-80"
                                 aria-hidden="true"
                               />
                             )}
@@ -1457,7 +1457,7 @@ const Navbar = () => {
                           <img
                             src={item.icon}
                             alt=""
-                            className="w-5 h-5 object-contain opacity-80"
+                            className="w-[22px] h-[22px] object-contain opacity-80"
                             aria-hidden="true"
                           />
                         )}

@@ -52,8 +52,15 @@ import { useSelector } from "react-redux"
         if (search) {
             const searchTerm = search.toLowerCase();
             filtered = filtered.filter(p => {
-                const productName = p.name.toLowerCase();
-                return productName.includes(searchTerm) || levenshtein(productName, searchTerm) <= 2;
+                const productName = (p.name || '').toLowerCase();
+                const productSku = (p.sku || '').toLowerCase();
+                const productBarcode = (p.barcode || '').toLowerCase();
+                return (
+                    productName.includes(searchTerm) ||
+                    productSku.includes(searchTerm) ||
+                    productBarcode.includes(searchTerm) ||
+                    levenshtein(productName, searchTerm) <= 2
+                );
             });
         }
         switch (sortBy) {

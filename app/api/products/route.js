@@ -106,8 +106,8 @@ export async function GET(request){
         
         // Optimized query with field selection
         const selectedFields = compact
-            ? 'name slug AED price images category sku inStock stockQuantity createdAt showBuyButton showEnquiryButton targetAudience tags'
-            : 'name slug description shortDescription AED price images category sku inStock hasVariants variants attributes fastDelivery enableEnquiry showBuyButton showEnquiryButton stockQuantity createdAt tags targetAudience goldType goldWeight goldRate stoneWeight stonePrice makingCharges';
+            ? 'name slug AED price images category sku barcode inStock stockQuantity createdAt showBuyButton showEnquiryButton targetAudience tags'
+            : 'name slug description shortDescription AED price images category sku barcode inStock hasVariants variants attributes fastDelivery enableEnquiry showBuyButton showEnquiryButton stockQuantity createdAt tags targetAudience goldType goldWeight goldRate stoneWeight stonePrice makingCharges';
 
         let products = await Product.find(query)
             .select(selectedFields)

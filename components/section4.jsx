@@ -72,7 +72,7 @@ const GridSection = ({ section, router }) => {
 
               {/* Product Info */}
               <div className="p-2 sm:p-3">
-                <h4 className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 mb-1 leading-tight">
+                <h4 className="text-base sm:text-lg font-casad font-semibold text-gray-900 line-clamp-2 mb-1 leading-tight">
                   {product.name}
                 </h4>
                 {product.offer && (

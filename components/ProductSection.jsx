@@ -44,7 +44,7 @@ export default function ProductSection({ title, products, viewAllLink }) {
                         </div>
                         {/* Product Info */}
                         <div className="space-y-1">
-                            <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-orange-600 transition">
+                            <h3 className="text-base sm:text-lg font-casad font-semibold text-gray-900 line-clamp-2 group-hover:text-orange-600 transition">
                                 {product.name}
                             </h3>
                                                         {/* Show price row only if at least one price is > 0 */}

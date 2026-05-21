@@ -68,6 +68,7 @@ const ProductCard = ({ product }) => {
   const reviewCount = reviews.length > 0
     ? reviews.length
     : (product.ratingCount || 0);
+  const hasReviews = reviewCount > 0;
 
   const productName = (product.name || product.title || 'Untitled Product').length > 30
     ? (product.name || product.title || 'Untitled Product').slice(0, 23) + '...'
@@ -132,12 +133,12 @@ const ProductCard = ({ product }) => {
 
       {/* Product Info */}
       <div className="p-2 flex flex-col flex-grow">
-        <h3 className="text-xs sm:text-sm font-medium text-gray-800 line-clamp-2 mb-1">
+        <h3 className="text-base sm:text-lg font-casad font-semibold text-gray-800 line-clamp-2 mb-1 leading-snug">
           {productName}
         </h3>
         {/* Only show rating and review count, no date or initials */}
-        <div className="flex items-center mb-0">
-          <>
+        {hasReviews && (
+          <div className="flex items-center mb-0">
             {[...Array(5)].map((_, i) => (
               <FaStar
                 key={i}
@@ -145,11 +146,9 @@ const ProductCard = ({ product }) => {
                 className={i < ratingValue ? 'text-yellow-400' : 'text-gray-300'}
               />
             ))}
-            <span className="text-gray-500 text-[8px] sm:text-xs ml-1">
-              {reviewCount > 0 ? `(${reviewCount})` : 'No reviews yet'}
-            </span>
-          </>
-        </div>
+            <span className="text-gray-500 text-[8px] sm:text-xs ml-1">({reviewCount})</span>
+          </div>
+        )}
 
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col gap-0.5">

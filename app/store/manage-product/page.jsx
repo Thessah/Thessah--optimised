@@ -261,6 +261,7 @@ export default function StoreManageProducts() {
                         <tr>
                             <th className="px-4 py-3 w-[240px]">Name</th>
                             <th className="px-4 py-3 hidden lg:table-cell w-[120px]">SKU</th>
+                            <th className="px-4 py-3 hidden xl:table-cell w-[170px]">Barcode</th>
                             <th className="px-4 py-3 hidden md:table-cell w-[260px]">Description</th>
                             <th className="px-4 py-3 hidden md:table-cell w-[120px] text-right">AED</th>
                             <th className="px-4 py-3 w-[120px] text-right">Price</th>
@@ -288,6 +289,7 @@ export default function StoreManageProducts() {
                                     </div>
                                 </td>
                                 <td className="px-4 py-3 text-slate-600 hidden lg:table-cell">{product.sku || '-'}</td>
+                                <td className="px-4 py-3 text-slate-600 hidden xl:table-cell">{product.barcode || '-'}</td>
                                 <td className="px-4 py-3 max-w-md text-slate-600 hidden md:table-cell truncate">
                                     {product.description?.replace(/<[^>]*>/g, ' ').trim().substring(0, 100)}...
                                 </td>

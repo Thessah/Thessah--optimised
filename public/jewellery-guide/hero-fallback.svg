@@ -1,0 +1,23 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F4E6D2"/>
+      <stop offset="1" stop-color="#E8D0AD"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(260 260) rotate(90) scale(420)">
+      <stop stop-color="#FFF7EC"/>
+      <stop offset="1" stop-color="#FFF7EC" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <rect width="1200" height="900" fill="url(#glow)"/>
+  <circle cx="240" cy="220" r="160" fill="#F8EEDD" opacity="0.7"/>
+  <circle cx="1020" cy="730" r="220" fill="#EED9B8" opacity="0.55"/>
+  <path d="M0 710C180 650 310 630 430 650C560 670 670 740 790 760C930 780 1070 730 1200 690V900H0V710Z" fill="#D7BA8E" opacity="0.45"/>
+  <g opacity="0.8">
+    <path d="M812 210L838 264L896 272L854 312L864 370L812 342L760 370L770 312L728 272L786 264L812 210Z" fill="#B8894E"/>
+    <circle cx="812" cy="272" r="22" fill="#F8EEDD"/>
+    <circle cx="812" cy="272" r="11" fill="#B8894E"/>
+  </g>
+  <text x="80" y="798" font-family="Georgia, serif" font-size="58" fill="#6D4D2A" letter-spacing="3">JEWELLERY GUIDE</text>
+</svg>

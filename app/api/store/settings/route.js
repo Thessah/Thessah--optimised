@@ -74,6 +74,29 @@ let cachedSettings = {
     text: 'Exclusive Welcome Offer: AED 199 OFF your first jewelry order & Free Shipping.',
     buttonText: 'Apply Now',
     buttonPath: '/'
+  },
+  jewelleryGuide: {
+    enabled: true,
+    hero: {
+      title: 'Jewellery Guide',
+      subtitle: 'Learn how to choose, style, and care for your jewellery.',
+      image: ''
+    },
+    intro: '',
+    sections: [
+      {
+        title: 'How to Choose Jewellery',
+        content: '',
+        image: '',
+        visible: true
+      }
+    ],
+    faqs: [
+      {
+        question: 'How do I clean gold jewellery?',
+        answer: ''
+      }
+    ]
   }
 };
 

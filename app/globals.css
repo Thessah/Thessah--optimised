@@ -218,6 +218,12 @@
     }
 }
 
+@layer utilities {
+    .font-casad {
+        font-family: "Casad TS-Medium", "Times New Roman", Georgia, serif;
+    }
+}
+
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }

@@ -1,0 +1,18 @@
+<svg width="900" height="560" viewBox="0 0 900 560" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="carebg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F7EADB"/>
+      <stop offset="1" stop-color="#EFD5B2"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="560" fill="url(#carebg)"/>
+  <rect x="248" y="138" width="404" height="292" rx="28" fill="#C19459"/>
+  <rect x="276" y="166" width="348" height="228" rx="20" fill="#F8EBD8"/>
+  <rect x="302" y="196" width="88" height="164" rx="12" fill="#EED7B8"/>
+  <rect x="406" y="196" width="88" height="164" rx="12" fill="#EED7B8"/>
+  <rect x="510" y="196" width="88" height="164" rx="12" fill="#EED7B8"/>
+  <circle cx="346" cy="278" r="19" fill="#B78346"/>
+  <circle cx="450" cy="278" r="19" fill="#B78346"/>
+  <circle cx="554" cy="278" r="19" fill="#B78346"/>
+  <text x="44" y="514" font-family="Georgia, serif" font-size="44" fill="#6D4D2A">Jewellery Care</text>
+</svg>
