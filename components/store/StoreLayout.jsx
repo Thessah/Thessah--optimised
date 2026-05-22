@@ -18,6 +18,7 @@ const StoreLayout = ({ children }) => {
     const [isAdmin, setIsAdmin] = useState(false);
     const [sellerLoading, setSellerLoading] = useState(true);
     const [storeInfo, setStoreInfo] = useState(null);
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
     const fetchIsSeller = async () => {
         if (!user) return;
@@ -73,14 +74,31 @@ const StoreLayout = ({ children }) => {
             </Link>
         </div>
     ) : (isSeller || isAdmin) ? (
-        <div className="flex flex-col h-screen">
-            <SellerNavbar storeInfo={storeInfo} isAdmin={isAdmin} />
-            <div className="flex flex-1 items-start h-full overflow-y-scroll no-scrollbar">
-                <SellerSidebar storeInfo={storeInfo} isAdmin={isAdmin} />
-                <div className="flex-1 h-full p-5 lg:pl-12 lg:pt-12 overflow-y-scroll">
+        <div className="min-h-screen flex flex-col">
+            <SellerNavbar
+                storeInfo={storeInfo}
+                isAdmin={isAdmin}
+                onToggleSidebar={() => setMobileSidebarOpen((prev) => !prev)}
+            />
+            <div className="flex flex-1 min-h-0 items-start overflow-hidden">
+                <SellerSidebar
+                    storeInfo={storeInfo}
+                    isAdmin={isAdmin}
+                    mobileOpen={mobileSidebarOpen}
+                    onCloseMobile={() => setMobileSidebarOpen(false)}
+                />
+                <div className="flex-1 min-h-0 overflow-y-auto p-5 lg:pl-12 lg:pt-12">
                     {children}
                 </div>
             </div>
+            {mobileSidebarOpen && (
+                <button
+                    type="button"
+                    aria-label="Close sidebar"
+                    onClick={() => setMobileSidebarOpen(false)}
+                    className="sm:hidden fixed inset-0 z-[70] bg-black/50"
+                />
+            )}
         </div>
     ) : (
         <div className="min-h-screen flex flex-col items-center justify-center text-center px-6">

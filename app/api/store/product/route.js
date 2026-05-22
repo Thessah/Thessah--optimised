@@ -6,6 +6,7 @@ import Product from '@/models/Product';
 import authSeller from "@/middlewares/authSeller";
 import { NextResponse } from "next/server";
 import { requireFirebaseAuth } from '@/lib/firebase-auth-helper';
+import { generateUniqueProductName, generateUniqueSlug, normalizeSlug } from "@/lib/productUniqueness";
 
 // Helper: Upload images to ImageKit
 const uploadImages = async (images) => {
@@ -27,39 +28,6 @@ const uploadImages = async (images) => {
             });
         })
     );
-};
-
-const normalizeSlug = (value, fallback = 'product') => {
-    const raw = String(value || '').trim().toLowerCase();
-    const cleaned = raw
-        .replace(/[^a-z0-9-]+/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/(^-|-$)+/g, '');
-    return cleaned || fallback;
-};
-
-const generateUniqueSlug = async (baseSlug, excludeId = null) => {
-    const base = normalizeSlug(baseSlug);
-
-    // First try the base slug as-is.
-    const existingBase = await Product.findOne({ slug: base }).select('_id').lean();
-    if (!existingBase || (excludeId && existingBase._id.toString() === String(excludeId))) {
-        return base;
-    }
-
-    // If taken, append incremental suffixes: slug-2, slug-3, ...
-    let counter = 2;
-    while (counter < 10000) {
-        const candidate = `${base}-${counter}`;
-        const existing = await Product.findOne({ slug: candidate }).select('_id').lean();
-        if (!existing || (excludeId && existing._id.toString() === String(excludeId))) {
-            return candidate;
-        }
-        counter += 1;
-    }
-
-    // Final fallback with timestamp if suffix range is unexpectedly exhausted.
-    return `${base}-${Date.now()}`;
 };
 
 // POST: Create a new product
@@ -91,7 +59,7 @@ export async function POST(request) {
         }
 
         const formData = await request.formData();
-        const name = formData.get("name");
+        const requestedName = String(formData.get("name") || "").trim();
         const description = formData.get("description");
         const category = formData.get("category");
         const sku = formData.get("sku") || null;
@@ -137,12 +105,17 @@ export async function POST(request) {
         // Base pricing (used when no variants)
         const AED = Number(formData.get("AED"));
         const price = Number(formData.get("price"));
+        const uniqueName = await generateUniqueProductName(Product, requestedName, {
+            category,
+            notes: description,
+            useAI: true,
+        });
         // Slug from form (manual) or generated from product name, then auto-uniquified.
-        const requestedSlug = formData.get("slug")?.toString().trim() || name;
-        const slug = await generateUniqueSlug(requestedSlug);
+        const requestedSlug = formData.get("slug")?.toString().trim() || uniqueName;
+        const slug = await generateUniqueSlug(Product, requestedSlug);
 
         // Validate core fields
-        if (!name || !description || !category || images.length < 1) {
+        if (!requestedName || !description || !category || images.length < 1) {
             return NextResponse.json({ error: "Missing product details" }, { status: 400 });
         }
 
@@ -223,7 +196,7 @@ export async function POST(request) {
         const showEnquiryButton = String(formData.get("showEnquiryButton") || "true").toLowerCase() === "true";
 
         const product = await Product.create({
-            name,
+            name: uniqueName,
             slug,
             description,
             shortDescription,
@@ -302,7 +275,7 @@ export async function PUT(request) {
 
         const formData = await request.formData();
         const productId = formData.get("productId");
-        const name = formData.get("name");
+        const requestedName = String(formData.get("name") || "").trim();
         const description = formData.get("description");
         const category = formData.get("category");
         const sku = formData.get("sku");
@@ -440,8 +413,17 @@ export async function PUT(request) {
         const showEnquiryButton = formData.get("showEnquiryButton") !== null ? String(formData.get("showEnquiryButton")).toLowerCase() === "true" : product.showEnquiryButton;
 
         // If slug is provided and changed, check uniqueness
+        const uniqueName = requestedName
+            ? await generateUniqueProductName(Product, requestedName, {
+                excludeId: productId,
+                category,
+                notes: description,
+                useAI: true,
+            })
+            : product.name;
+
         let updateData = {
-            name,
+            name: uniqueName,
             description,
             shortDescription,
             AED: finalAED,
@@ -483,7 +465,9 @@ export async function PUT(request) {
             updateData.stockQuantity = stockQuantity;
         }
         if (slug && slug !== product.slug) {
-            updateData.slug = await generateUniqueSlug(slug, productId);
+            updateData.slug = await generateUniqueSlug(Product, slug, productId);
+        } else if (!slug && requestedName && requestedName !== product.name) {
+            updateData.slug = await generateUniqueSlug(Product, uniqueName, productId);
         }
         product = await Product.findByIdAndUpdate(
             productId,

@@ -1,6 +1,7 @@
 import connectDB from "@/lib/mongoose";
 import Product from "@/models/Product";
 import Rating from "@/models/Rating";
+import { generateUniqueProductName, generateUniqueSlug } from "@/lib/productUniqueness";
 import { NextResponse } from "next/server";
 
 const escapeRegExp = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -11,20 +12,15 @@ export async function POST(request) {
         const body = await request.json();
         const { name, description, shortDescription, AED, price, images, category, sku, inStock, hasVariants, variants, attributes, hasBulkPricing, bulkPricing, fastDelivery, allowReturn, allowReplacement, storeId, slug, enableEnquiry, goldType, goldWeight, goldRate, stoneWeight, stonePrice, makingCharges } = body;
 
-        // Generate slug from name if not provided
-        const productSlug = slug || name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)+/g, '');
-
-        // Check if slug is unique
-        const existing = await Product.findOne({ slug: productSlug });
-        if (existing) {
-            return NextResponse.json({ error: "Slug already exists. Please use a different product name." }, { status: 400 });
-        }
+        const uniqueName = await generateUniqueProductName(Product, name, {
+            category,
+            notes: shortDescription || description,
+            useAI: true,
+        });
+        const productSlug = await generateUniqueSlug(Product, slug || uniqueName);
 
         const product = await Product.create({
-            name,
+            name: uniqueName,
             slug: productSlug,
             description,
             shortDescription,

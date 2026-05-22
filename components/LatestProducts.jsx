@@ -85,7 +85,7 @@ const ProductCard = ({ product }) => {
   return (
     <Link
       href={`/product/${product.slug || product._id || ''}`}
-      className={`group bg-white rounded-xl shadow-sm ${hasSecondary ? 'hover:shadow-lg' : ''} transition-all duration-300 flex flex-col relative overflow-hidden`}
+      className={`group bg-white rounded-xl shadow-sm ${hasSecondary ? 'hover:shadow-lg' : ''} transition-all duration-300 flex flex-col relative overflow-hidden h-full`}
       onMouseEnter={hasSecondary ? () => setHovered(true) : null}
       onMouseLeave={hasSecondary ? () => setHovered(false) : null}
     >
@@ -132,13 +132,14 @@ const ProductCard = ({ product }) => {
       </div>
 
       {/* Product Info */}
-      <div className="p-2 flex flex-col flex-grow">
+      <div className="p-2 flex flex-col flex-grow min-h-[108px] sm:min-h-[120px]">
         <h3 className="text-base sm:text-lg font-casad font-semibold text-gray-800 line-clamp-2 mb-1 leading-snug">
           {productName}
         </h3>
-        {/* Only show rating and review count, no date or initials */}
-        {hasReviews && (
-          <div className="flex items-center mb-0">
+        {/* Keep a fixed-height rating row so all cards align */}
+        <div className="flex items-center min-h-[14px] mb-0">
+          {hasReviews ? (
+            <>
             {[...Array(5)].map((_, i) => (
               <FaStar
                 key={i}
@@ -147,8 +148,11 @@ const ProductCard = ({ product }) => {
               />
             ))}
             <span className="text-gray-500 text-[8px] sm:text-xs ml-1">({reviewCount})</span>
-          </div>
-        )}
+            </>
+          ) : (
+            <span className="text-transparent text-[8px] sm:text-xs">(0)</span>
+          )}
+        </div>
 
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
@@ -210,7 +214,7 @@ const BestSelling = () => {
         visibleButton={false}
       />
 
-      <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4">
+      <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-2 sm:gap-4">
         {isLoading
           ? Array(displayQuantity).fill(0).map((_, idx) => (
               <div key={idx} className="bg-white rounded-xl shadow-sm animate-pulse">

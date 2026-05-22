@@ -3,14 +3,13 @@ import { usePathname } from "next/navigation"
 import { HomeIcon, LayoutListIcon, SquarePenIcon, SquarePlusIcon, StarIcon, FolderIcon, TicketIcon, TruckIcon, RefreshCw, SparklesIcon, User as UserIcon, Users as UsersIcon } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/useAuth";
 import axios from "axios";
 
 import { useRouter } from "next/navigation"
 
-const StoreSidebar = ({storeInfo, isAdmin}) => {
-    const [isOpen, setIsOpen] = useState(true);
+const StoreSidebar = ({storeInfo, isAdmin, mobileOpen = false, onCloseMobile}) => {
     const [enquiryCount, setEnquiryCount] = useState(0);
     const [contactCount, setContactCount] = useState(0);
     const pathname = usePathname()
@@ -63,7 +62,7 @@ const StoreSidebar = ({storeInfo, isAdmin}) => {
     const sidebarLinks = isAdmin ? [...sellerLinks, ...adminLinks] : sellerLinks;
 
     return (
-        <aside className={`${isOpen ? 'w-64' : 'w-20'} bg-white border-r border-slate-200 h-screen overflow-y-auto transition-all duration-300 ease-in-out max-sm:fixed max-sm:top-0 max-sm:left-0 max-sm:z-50 max-sm:shadow-2xl ${isOpen ? 'max-sm:w-64' : 'max-sm:w-0'}`}>
+        <aside className={`w-64 bg-white border-r border-slate-200 h-full min-h-0 overflow-y-auto transition-transform duration-300 ease-in-out z-50 flex flex-col max-sm:fixed max-sm:top-0 max-sm:left-0 max-sm:shadow-2xl max-sm:h-screen max-sm:w-[85vw] max-sm:max-w-[340px] max-sm:z-[80] ${mobileOpen ? 'max-sm:translate-x-0' : 'max-sm:-translate-x-full'}`}>
             <div className="p-4 border-b border-slate-200 flex items-center gap-3 max-sm:justify-between">
                 <div className="flex items-center gap-3">
                     {/* <Image
@@ -75,6 +74,16 @@ const StoreSidebar = ({storeInfo, isAdmin}) => {
                     /> */}
                     <p className="text-slate-700">{storeInfo?.name || 'Thessah.ae'}</p>
                 </div>
+                <button
+                    type="button"
+                    onClick={onCloseMobile}
+                    className="sm:hidden inline-flex items-center justify-center p-2 rounded-md border border-slate-300 text-slate-700"
+                    aria-label="Close menu"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
             <div className="max-sm:mt-6">
                 {
@@ -84,16 +93,21 @@ const StoreSidebar = ({storeInfo, isAdmin}) => {
                                 {link.name}
                             </div>
                         ) : (
-                            <Link key={index} href={link.href} className={`relative flex items-center gap-3 text-slate-500 hover:bg-slate-50 p-2.5 transition ${pathname === link.href && 'bg-slate-100 sm:text-slate-600'}`}>
+                            <Link
+                                key={index}
+                                href={link.href}
+                                onClick={() => onCloseMobile?.()}
+                                className={`relative flex items-center gap-3 text-slate-500 hover:bg-slate-50 p-2.5 transition ${pathname === link.href && 'bg-slate-100 sm:text-slate-600'}`}
+                            >
                                 {link.icon && <link.icon size={18} className="sm:ml-5" />}
-                                <p className="max-sm:hidden flex-1">{link.name}</p>
+                                <p className="flex-1">{link.name}</p>
                                 {link.href === '/store/enquiries' && enquiryCount > 0 && (
-                                    <span className="max-sm:hidden ml-auto mr-3 min-w-[20px] h-5 px-1.5 rounded-full bg-orange-500 text-white text-[11px] font-bold flex items-center justify-center">
+                                    <span className="ml-auto mr-3 min-w-[20px] h-5 px-1.5 rounded-full bg-orange-500 text-white text-[11px] font-bold flex items-center justify-center">
                                         {enquiryCount}
                                     </span>
                                 )}
                                 {link.href === '/store#contact-messages' && contactCount > 0 && (
-                                    <span className="max-sm:hidden ml-auto mr-3 min-w-[20px] h-5 px-1.5 rounded-full bg-orange-500 text-white text-[11px] font-bold flex items-center justify-center">
+                                    <span className="ml-auto mr-3 min-w-[20px] h-5 px-1.5 rounded-full bg-orange-500 text-white text-[11px] font-bold flex items-center justify-center">
                                         {contactCount}
                                     </span>
                                 )}

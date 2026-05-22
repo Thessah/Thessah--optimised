@@ -26,6 +26,8 @@ export default function StoreManageProducts() {
     const [products, setProducts] = useState([])
     const [buyNowFilter, setBuyNowFilter] = useState('all')
     const [audienceFilter, setAudienceFilter] = useState('all')
+    const [pageSize, setPageSize] = useState(20)
+    const [currentPage, setCurrentPage] = useState(1)
     const [editingProduct, setEditingProduct] = useState(null)
     const [showEditModal, setShowEditModal] = useState(false)
     const [showBuyNowSettingsModal, setShowBuyNowSettingsModal] = useState(false)
@@ -46,6 +48,29 @@ export default function StoreManageProducts() {
 
         return matchesBuyNow && matchesAudience
     })
+
+    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize))
+    const safeCurrentPage = Math.min(currentPage, totalPages)
+    const startIndex = (safeCurrentPage - 1) * pageSize
+    const endIndex = Math.min(startIndex + pageSize, filteredProducts.length)
+    const paginatedProducts = filteredProducts.slice(startIndex, endIndex)
+
+    const getVisiblePageItems = () => {
+        if (totalPages <= 8) {
+            return Array.from({ length: totalPages }, (_, idx) => idx + 1)
+        }
+
+        const pages = [1]
+        const start = Math.max(2, safeCurrentPage - 2)
+        const end = Math.min(totalPages - 1, safeCurrentPage + 2)
+
+        if (start > 2) pages.push('start-ellipsis')
+        for (let page = start; page <= end; page += 1) pages.push(page)
+        if (end < totalPages - 1) pages.push('end-ellipsis')
+
+        pages.push(totalPages)
+        return pages
+    }
 
     const fetchStoreProducts = async () => {
         try {
@@ -184,6 +209,16 @@ export default function StoreManageProducts() {
         }  
     }, [user])
 
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [buyNowFilter, audienceFilter, pageSize])
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages)
+        }
+    }, [currentPage, totalPages])
+
     if (loading) return <Loading />
 
     return (
@@ -255,6 +290,26 @@ export default function StoreManageProducts() {
                     Kids ({products.filter((p) => Array.isArray(p.targetAudience) && p.targetAudience.includes('kids')).length})
                 </button>
             </div>
+
+            <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
+                <p className="text-sm text-slate-600">
+                    Showing {filteredProducts.length === 0 ? 0 : startIndex + 1}-{endIndex} of {filteredProducts.length}
+                </p>
+                <div className="flex items-center gap-2">
+                    <label htmlFor="pageSize" className="text-sm text-slate-600">Show</label>
+                    <select
+                        id="pageSize"
+                        value={pageSize}
+                        onChange={(e) => setPageSize(Number(e.target.value))}
+                        className="px-2.5 py-1.5 text-sm rounded-lg border border-slate-300 bg-white text-slate-700"
+                    >
+                        <option value={20}>20</option>
+                        <option value={40}>40</option>
+                    </select>
+                    <span className="text-sm text-slate-600">per page</span>
+                </div>
+            </div>
+
             <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-sm">
                 <table className="min-w-[1160px] w-full text-left text-sm">
                     <thead className="bg-slate-50 text-gray-700 uppercase tracking-wider">
@@ -274,7 +329,7 @@ export default function StoreManageProducts() {
                         </tr>
                     </thead>
                     <tbody className="text-slate-700">
-                        {filteredProducts.map((product, idx) => (
+                        {paginatedProducts.map((product, idx) => (
                             <tr key={product._id} className={`border-t border-gray-200 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} hover:bg-gray-50`}>
                                 <td className="px-4 py-3">
                                     <div className="flex gap-2 items-center min-w-[220px]">
@@ -359,7 +414,7 @@ export default function StoreManageProducts() {
                         ))}
                         {filteredProducts.length === 0 && (
                             <tr>
-                                <td colSpan={11} className="px-4 py-10 text-center text-slate-500">
+                                <td colSpan={12} className="px-4 py-10 text-center text-slate-500">
                                     No products found for current filters.
                                 </td>
                             </tr>
@@ -367,6 +422,52 @@ export default function StoreManageProducts() {
                     </tbody>
                 </table>
             </div>
+
+            {filteredProducts.length > 0 && (
+                <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                            type="button"
+                            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                            disabled={safeCurrentPage === 1}
+                            className={`px-3 py-1.5 text-sm rounded-lg border transition ${safeCurrentPage === 1 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
+                        >
+                            Previous
+                        </button>
+                        {getVisiblePageItems().map((item, idx) => {
+                            if (typeof item !== 'number') {
+                                return (
+                                    <span key={item + idx} className="px-1 text-slate-500 select-none">
+                                        ...
+                                    </span>
+                                )
+                            }
+
+                            return (
+                                <button
+                                    key={item}
+                                    type="button"
+                                    onClick={() => setCurrentPage(item)}
+                                    className={`min-w-9 px-3 py-1.5 text-sm rounded-lg border transition ${safeCurrentPage === item ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
+                                >
+                                    {item}
+                                </button>
+                            )
+                        })}
+                        <button
+                            type="button"
+                            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                            disabled={safeCurrentPage === totalPages}
+                            className={`px-3 py-1.5 text-sm rounded-lg border transition ${safeCurrentPage === totalPages ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
+                        >
+                            Next
+                        </button>
+                    </div>
+                    <p className="text-sm text-slate-600">
+                        Page {safeCurrentPage} of {totalPages}
+                    </p>
+                </div>
+            )}
 
             {showEditModal && (
                 <ProductForm 
