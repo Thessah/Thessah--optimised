@@ -6,6 +6,7 @@ import {
   Search,
   ShoppingCart,
   LifeBuoy,
+  PackageIcon,
   Menu,
   X,
   HeartIcon,
