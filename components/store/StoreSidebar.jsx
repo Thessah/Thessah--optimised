@@ -54,6 +54,7 @@ const StoreSidebar = ({storeInfo, isAdmin, mobileOpen = false, onCloseMobile}) =
         { name: '👑 ADMIN SECTION', href: '#', icon: null, isHeader: true },
         { name: 'Home', href: '/store/home', icon: HomeIcon },
         { name: 'Blog Articles', href: '/store/blogs', icon: LayoutListIcon },
+        { name: 'Ads Post', href: '/store/ads-post', icon: SparklesIcon },
         { name: 'Jewellery Guide', href: '/store/jewellery-guide', icon: SparklesIcon },
         { name: 'Menu Management', href: '/store/menu-management', icon: LayoutListIcon },
     ]

@@ -97,36 +97,46 @@ export default function ContactUs() {
         </form>
       )}
 
-      {/* Business Contact Info (MANDATORY for Razorpay) */}
+      {/* Business Contact Info */}
       <div className="mt-10 rounded-lg border bg-gray-50 p-6 text-sm text-gray-700">
         <p className="mb-2">
-          <strong>Business Name:</strong> Nilaas
+          <strong>Business Name:</strong> THESSAH Gold &amp; Jewellery
+        </p>
+        <p className="mb-2">
+          <strong>Address:</strong> Hind Plaza 2, Shop No. 06, Gold Souq Extension, Al Ras, Deira, Dubai
         </p>
         <p className="mb-2">
           <strong>Website:</strong>{' '}
           <a
-            href="https://www.thessah.com"
+            href="https://www.thessah.ae"
             className="text-orange-600 hover:underline"
           >
-            https://www.thessah.com
+            www.thessah.ae
           </a>
         </p>
         <p className="mb-2">
           <strong>Email:</strong>{' '}
           <a
-            href="mailto:support@thessah.com"
+            href="mailto:info@thessah.ae"
             className="text-orange-600 hover:underline"
           >
-            support@thessah.com
+            info@thessah.ae
           </a>
         </p>
         <p className="mb-1">
           <strong>Customer Support:</strong>{' '}
           <a
-            href="tel:+919526367551"
+            href="tel:+971588375912"
             className="text-orange-600 hover:underline"
           >
-            +91 95263 67551
+            +971 58 837 5912
+          </a>{' '}
+          /{' '}
+          <a
+            href="tel:+97142724515"
+            className="text-orange-600 hover:underline"
+          >
+            +971 4 272 4515
           </a>
         </p>
       </div>

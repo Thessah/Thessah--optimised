@@ -25,6 +25,10 @@ const publicEndpoints = [
   '/api/gold-rate', // Public gold rate endpoint for live rates
 ];
 
+if (process.env.NODE_ENV !== 'production') {
+  publicEndpoints.push('/api/store/ads-post/dev-test');
+}
+
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;

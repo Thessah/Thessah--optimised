@@ -22,6 +22,7 @@ try {
 if (!domains.includes('lh3.googleusercontent.com')) domains.push('lh3.googleusercontent.com');
 
 const nextConfig = {
+    serverExternalPackages: ['sharp'],
     images: {
         unoptimized: false,
         domains,

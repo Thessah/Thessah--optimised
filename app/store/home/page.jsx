@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, HomeIcon, LayoutListIcon } from "lucide-react";
+import { ArrowRight, HomeIcon, LayoutListIcon, SparklesIcon } from "lucide-react";
 
 const adminSections = [
   {
@@ -7,6 +7,12 @@ const adminSections = [
     href: "/store/hero-banners",
     description: "Manage the homepage hero carousel and spotlight offers.",
     icon: HomeIcon,
+  },
+  {
+    title: "Ads Post",
+    href: "/store/ads-post",
+    description: "Generate Instagram gold rate posts with Gemini AI and live rates.",
+    icon: SparklesIcon,
   },
   {
     title: "Collections",

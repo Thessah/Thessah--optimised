@@ -1,4 +1,4 @@
-import { MailIcon, InfoIcon } from "lucide-react";
+import { MailIcon, PhoneIcon } from "lucide-react";
 
 export default function SupportBar() {
   return (
@@ -11,17 +11,17 @@ export default function SupportBar() {
         </div>
         <div className="flex items-center gap-10 w-full md:w-auto justify-center md:justify-end">
           <div className="flex items-center gap-3 px-4 py-2 rounded-lg">
-            <InfoIcon size={24} className="text-gray-400" />
+            <PhoneIcon size={24} className="text-gray-400" />
             <div className="flex flex-col">
-              <span className="text-xs text-gray-500 uppercase font-medium tracking-wide">Help Center</span>
-              <a href="https://help.thessah.com" className="font-bold text-base text-gray-800 hover:underline leading-tight" target="_blank" rel="noopener noreferrer">help.thessah.com</a>
+              <span className="text-xs text-gray-500 uppercase font-medium tracking-wide">Call Us</span>
+              <a href="tel:+971588375912" className="font-bold text-base text-gray-800 hover:underline leading-tight">+971 58 837 5912</a>
             </div>
           </div>
           <div className="flex items-center gap-3 px-4 py-2 rounded-lg">
             <MailIcon size={24} className="text-gray-400" />
             <div className="flex flex-col">
               <span className="text-xs text-gray-500 uppercase font-medium tracking-wide">Email Support</span>
-              <a href="mailto:care@thessah.com" className="font-bold text-base text-gray-800 hover:underline leading-tight">care@thessah.com</a>
+              <a href="mailto:info@thessah.ae" className="font-bold text-base text-gray-800 hover:underline leading-tight">info@thessah.ae</a>
             </div>
           </div>
         </div>

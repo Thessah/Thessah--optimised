@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Phone, Clock, Navigation } from 'lucide-react'
+import { MapPin, Phone, Clock, Navigation, Mail, Globe } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -8,9 +8,12 @@ export default function FindStorePage() {
   const storeInfo = {
     name: "THESSAH",
     tagline: "Jewelry Store",
-    address: "HIND Plaza - Gold Souq - Al Ras - Dubai",
+    address: "Hind Plaza 2, Shop No. 06, Gold Souq Extension, Al Ras, Deira, Dubai",
     plusCode: "77CW+HJ Dubai",
-    phone: "+971 XX XXX XXXX",
+    phones: ["+971 58 837 5912", "+971 4 272 4515"],
+    phone: "+971 58 837 5912",
+    email: "info@thessah.ae",
+    website: "www.thessah.ae",
     hours: {
       monday: "9:00 AM - 10:00 PM",
       tuesday: "9:00 AM - 10:00 PM",
@@ -65,7 +68,7 @@ export default function FindStorePage() {
             </div>
           </div>
 
-          {/* Phone Card */}
+          {/* Contact Card */}
           <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow border border-green-100">
             <div className="flex items-start gap-4">
               <div className="p-3 bg-teal-100 rounded-lg">
@@ -73,10 +76,35 @@ export default function FindStorePage() {
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Contact</h3>
-                <a href={`tel:${storeInfo.phone}`} className="text-emerald-600 hover:underline">
-                  {storeInfo.phone}
-                </a>
-                <p className="text-sm text-gray-500 mt-2">Call for inquiries</p>
+                <div className="space-y-1">
+                  {storeInfo.phones.map((phone) => (
+                    <a
+                      key={phone}
+                      href={`tel:${phone.replace(/\s/g, '')}`}
+                      className="block text-emerald-600 hover:underline"
+                    >
+                      {phone}
+                    </a>
+                  ))}
+                </div>
+                <div className="mt-3 space-y-1.5">
+                  <a
+                    href={`mailto:${storeInfo.email}`}
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-emerald-600"
+                  >
+                    <Mail className="w-4 h-4" />
+                    {storeInfo.email}
+                  </a>
+                  <a
+                    href={`https://${storeInfo.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-emerald-600"
+                  >
+                    <Globe className="w-4 h-4" />
+                    {storeInfo.website}
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -191,7 +219,7 @@ export default function FindStorePage() {
               Get Directions
             </a>
             <a
-              href={`tel:${storeInfo.phone}`}
+              href={`tel:${storeInfo.phone.replace(/\s/g, '')}`}
               className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-emerald-600 text-white rounded-full font-semibold hover:bg-emerald-700 transition-all border-2 border-emerald-600"
             >
               <Phone className="w-5 h-5" />
