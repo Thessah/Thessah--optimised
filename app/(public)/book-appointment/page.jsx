@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import axios from 'axios'
-import LeftImage from '@/assets/collection/stunning-every-ear.webp'
+import { CalendarCheck, Gem, ShieldCheck, Clock, MapPin, Phone } from 'lucide-react'
+import LeftImage from '@/assets/cont.webp'
 
 export default function BookAppointmentPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', date: '', time: '', type: 'In-store', store: '', message: '' })
@@ -212,6 +213,79 @@ export default function BookAppointmentPage() {
             <p className="text-xs text-gray-500 text-center mt-4">
               By submitting, you agree to our <a href="/terms" className="underline">Terms of Use</a> and <a href="/privacy-policy" className="underline">Privacy Policy</a>.
             </p>
+          </div>
+        </div>
+
+        {/* Why book an appointment */}
+        <div className="mt-14">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <span className="inline-block text-xs font-semibold tracking-[0.25em] uppercase text-[#008C6D] mb-2">
+              The THESSAH Experience
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Why Book an Appointment?</h2>
+            <p className="mt-3 text-gray-600">
+              Enjoy a private, personalised visit with our jewellery experts — no waiting, full
+              attention, and curated pieces selected just for you.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: CalendarCheck,
+                title: 'Personalised Consultation',
+                desc: 'One-on-one guidance tailored to your style, occasion, and budget.',
+              },
+              {
+                icon: Gem,
+                title: 'Exclusive Collections',
+                desc: 'Preview the latest gold and diamond pieces before anyone else.',
+              },
+              {
+                icon: ShieldCheck,
+                title: 'Certified & Trusted',
+                desc: 'Authentic, hallmarked jewellery with transparent gold rates.',
+              },
+            ].map(({ icon: Icon, title, desc }) => (
+              <div
+                key={title}
+                className="rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition p-6 text-center"
+              >
+                <div className="mx-auto w-14 h-14 rounded-2xl bg-[#008C6D]/10 flex items-center justify-center mb-4">
+                  <Icon className="w-7 h-7 text-[#008C6D]" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
+                <p className="text-sm text-gray-600">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Visit / contact strip */}
+        <div className="mt-10 rounded-2xl overflow-hidden bg-gradient-to-r from-[#00644E] via-[#008C6D] to-[#00A37F] text-white">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-8 sm:p-10">
+            <div className="flex items-start gap-4">
+              <MapPin className="w-6 h-6 shrink-0 mt-1" />
+              <div>
+                <p className="text-white/80 text-sm">Visit our showroom</p>
+                <p className="font-medium">Hind Plaza 2, Shop No. 06, Gold Souq Extension, Al Ras, Deira, Dubai</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <Phone className="w-6 h-6 shrink-0 mt-1" />
+              <div>
+                <p className="text-white/80 text-sm">Call to confirm</p>
+                <a href="tel:+971588375912" className="block font-medium hover:underline">+971 58 837 5912</a>
+                <a href="tel:+97142724515" className="block font-medium hover:underline">+971 4 272 4515</a>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <Clock className="w-6 h-6 shrink-0 mt-1" />
+              <div>
+                <p className="text-white/80 text-sm">Working hours</p>
+                <p className="font-medium">Mon - Sun: 10:00 AM - 10:00 PM</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

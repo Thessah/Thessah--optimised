@@ -8,7 +8,7 @@ import PageTitle from '@/components/PageTitle'
 const DEFAULT_EXPERIENCES = [
   { title: 'VISIT OUR STORE', image: '', link: '/find-store' },
   { title: 'BOOK AN APPOINTMENT', image: '', link: '/book-appointment' },
-  { title: 'TALK TO AN EXPERT', image: '', link: '/contact-expert' },
+  { title: 'TALK TO AN EXPERT', image: '', link: '/contact-us' },
   { title: 'DIGI GOLD', image: '', link: '/digital-gold' },
   { title: 'BLOGS', image: '', link: '/blog' },
   { title: 'JEWELLERY GUIDE', image: '', link: '/jewellery-guide' }
